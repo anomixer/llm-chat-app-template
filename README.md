@@ -1,12 +1,14 @@
 # LLM Chat Application Template
 
+> Other languages: [繁體中文 (README.zh-TW.md)](README.zh-TW.md) | [简体中文 (README.zh-CN.md)](README.zh-CN.md) | [日本語 (README.ja.md)](README.ja.md) | [한국어 (README.ko.md)](README.ko.md)
+
 A simple, ready-to-deploy chat application template powered by Cloudflare Workers AI. This template provides a clean starting point for building AI chat applications with streaming responses.
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/templates/tree/main/llm-chat-app-template)
 
 <!-- dash-content-start -->
 
-## Demo
+### Demo
 
 This template demonstrates how to build an AI-powered chat interface using Cloudflare Workers AI with streaming responses. It features:
 
@@ -15,7 +17,7 @@ This template demonstrates how to build an AI-powered chat interface using Cloud
 - Support for AI Gateway integration
 - Clean, responsive UI that works on mobile and desktop
 
-## Features
+### Features
 
 - 💬 Simple and responsive chat interface
 - ⚡ Server-Sent Events (SSE) for streaming responses
@@ -25,15 +27,15 @@ This template demonstrates how to build an AI-powered chat interface using Cloud
 - 🔄 Maintains chat history on the client
 <!-- dash-content-end -->
 
-## Getting Started
+### Getting Started
 
-### Prerequisites
+#### Prerequisites
 
 - [Node.js](https://nodejs.org/) (v18 or newer)
 - [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/)
 - A Cloudflare account with Workers AI access
 
-### Installation
+#### Installation
 
 1. Clone this repository:
 
@@ -53,7 +55,7 @@ This template demonstrates how to build an AI-powered chat interface using Cloud
    npm run cf-typegen
    ```
 
-### Development
+#### Development
 
 Start a local development server:
 
@@ -65,7 +67,7 @@ This will start a local server at http://localhost:8787.
 
 Note: Using Workers AI accesses your Cloudflare account even during local development, which will incur usage charges.
 
-### Deployment
+#### Deployment
 
 Deploy to Cloudflare Workers:
 
@@ -73,7 +75,7 @@ Deploy to Cloudflare Workers:
 npm run deploy
 ```
 
-## Project Structure
+### Project Structure
 
 ```
 /
@@ -89,9 +91,9 @@ npm run deploy
 └── README.md           # This documentation
 ```
 
-## How It Works
+### How It Works
 
-### Backend
+#### Backend
 
 The backend is built with Cloudflare Workers and uses the Workers AI platform to generate responses. The main components are:
 
@@ -99,7 +101,7 @@ The backend is built with Cloudflare Workers and uses the Workers AI platform to
 2. **Streaming**: Uses Server-Sent Events (SSE) for real-time streaming of AI responses
 3. **Workers AI Binding**: Connects to Cloudflare's AI service via the Workers AI binding
 
-### Frontend
+#### Frontend
 
 The frontend is a simple HTML/CSS/JavaScript application that:
 
@@ -108,13 +110,13 @@ The frontend is a simple HTML/CSS/JavaScript application that:
 3. Processes streaming responses in real-time
 4. Maintains chat history on the client side
 
-## Customization
+### Customization
 
-### Changing the Model
+#### Changing the Model
 
 To use a different AI model, update the `MODEL_ID` constant in `src/index.ts`. You can find available models in the [Cloudflare Workers AI documentation](https://developers.cloudflare.com/workers-ai/models/).
 
-### Using AI Gateway
+#### Using AI Gateway
 
 The template includes commented code for AI Gateway integration, which provides additional capabilities like rate limiting, caching, and analytics.
 
@@ -129,15 +131,15 @@ To enable AI Gateway:
 
 Learn more about [AI Gateway](https://developers.cloudflare.com/ai-gateway/).
 
-### Modifying the System Prompt
+#### Modifying the System Prompt
 
 The default system prompt can be changed by updating the `SYSTEM_PROMPT` constant in `src/index.ts`.
 
-### Styling
+#### Styling
 
 The UI styling is contained in the `<style>` section of `public/index.html`. You can modify the CSS variables at the top to quickly change the color scheme.
 
-## Resources
+### Resources
 
 - [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
 - [Cloudflare Workers AI Documentation](https://developers.cloudflare.com/workers-ai/)
