@@ -167,23 +167,19 @@
   </head>
   <body id="body">
     <header>
-      <h1>Cloudflare AI Chat</h1>
-      <p>Powered by Cloudflare Workers AI</p>
+      <h1 id="header-title">Cloudflare AI Chat</h1>
+      <p id="header-desc">Powered by Cloudflare Workers AI</p>
       <button id="theme-toggle" style="position:absolute;top:1rem;right:1rem;">🌙 切換主題</button>
+      <button id="lang-toggle" style="position:absolute;top:1rem;right:5.5rem;">🌐 Language</button>
     </header>
 
     <div class="chat-container">
       <div id="chat-messages" class="chat-messages">
-        <div class="message assistant-message">
-          <p>
-            Hello! I'm an LLM chat app powered by Cloudflare Workers AI. How can
-            I help you today?
-          </p>
-        </div>
+        <!-- 歡迎訊息由 JS 動態插入 -->
       </div>
 
       <div class="typing-indicator" id="typing-indicator">
-        AI is thinking...
+        <span id="typing-text">AI is thinking...</span>
       </div>
 
       <div class="message-input">
@@ -198,7 +194,7 @@
     </div>
 
     <footer>
-      <p>Cloudflare Workers AI Chat Template &copy; 2025</p>
+      <p id="footer-text">Cloudflare Workers AI Chat Template &copy; 2025</p>
     </footer>
 
     <!-- Chat app script -->
