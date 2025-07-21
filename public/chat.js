@@ -68,6 +68,12 @@ async function sendMessage() {
     // Scroll to bottom
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
+    // 傳送 system prompt
+    const lang = getLang();
+    const messages = [
+      { role: 'system', content: SYSTEM_PROMPT[lang] || SYSTEM_PROMPT['en'] },
+      ...chatHistory
+    ];
     // Send request to API
     const response = await fetch("/api/chat", {
       method: "POST",
@@ -75,7 +81,7 @@ async function sendMessage() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        messages: chatHistory,
+        messages,
       }),
     });
 
@@ -385,3 +391,26 @@ function showErrorToast(msg) {
 
 // ===== theme 預設為 dark =====
 setTheme(true);
+
+// ===== 多語 system prompt =====
+const SYSTEM_PROMPT = {
+  'en': 'You are a helpful, friendly assistant. Provide concise and accurate responses.',
+  'zh-TW': '你是一個樂於助人且友善的助理，請用簡潔且準確的方式回覆。',
+  'zh-CN': '你是一个乐于助人且友善的助手，请用简洁且准确的方式回复。',
+  'ja': 'あなたは親切でフレンドリーなアシスタントです。簡潔かつ正確に回答してください。',
+  'ko': '당신은 친절하고 도움이 되는 어시스턴트입니다. 간결하고 정확하게 답변해 주세요.',
+};
+
+// ===== 自動偵測瀏覽器語言 =====
+function detectBrowserLang() {
+  const navLang = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
+  if (navLang.startsWith('zh-TW') || navLang === 'zh-Hant') return 'zh-TW';
+  if (navLang.startsWith('zh-CN') || navLang === 'zh-Hans') return 'zh-CN';
+  if (navLang.startsWith('ja')) return 'ja';
+  if (navLang.startsWith('ko')) return 'ko';
+  if (navLang.startsWith('en')) return 'en';
+  return 'en';
+}
+if (!localStorage.getItem('lang')) {
+  setLang(detectBrowserLang());
+}
