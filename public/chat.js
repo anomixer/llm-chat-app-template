@@ -113,7 +113,7 @@ async function sendMessage() {
           if (jsonData.response) {
             // Append new content to existing text
             responseText += jsonData.response;
-            assistantMessageEl.querySelector("p").textContent = responseText;
+            assistantMessageEl.querySelector("p").innerHTML = window.marked.parse(responseText);
 
             // Scroll to bottom
             chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -150,7 +150,8 @@ async function sendMessage() {
 function addMessageToChat(role, content) {
   const messageEl = document.createElement("div");
   messageEl.className = `message ${role}-message`;
-  messageEl.innerHTML = `<p>${content}</p>`;
+  // 使用 marked 解析 markdown
+  messageEl.innerHTML = `<p>${window.marked.parse(content)}</p>`;
   chatMessages.appendChild(messageEl);
 
   // Scroll to bottom
