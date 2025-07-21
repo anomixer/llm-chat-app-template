@@ -68,7 +68,7 @@ async function sendMessage() {
     // Create new assistant response element
     const assistantMessageEl = document.createElement("div");
     assistantMessageEl.className = "message assistant-message";
-    assistantMessageEl.innerHTML = "<p></p>";
+    assistantMessageEl.innerHTML = "<div class='msg-label'>AI:</div><div class='msg-content'></div>";
     chatMessages.appendChild(assistantMessageEl);
 
     // Scroll to bottom
@@ -113,7 +113,7 @@ async function sendMessage() {
           if (jsonData.response) {
             // Append new content to existing text
             responseText += jsonData.response;
-            assistantMessageEl.querySelector("p").innerHTML = window.marked.parse(responseText);
+            assistantMessageEl.querySelector(".msg-content").innerHTML = window.marked.parse(responseText);
 
             // Scroll to bottom
             chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -150,8 +150,9 @@ async function sendMessage() {
 function addMessageToChat(role, content) {
   const messageEl = document.createElement("div");
   messageEl.className = `message ${role}-message`;
-  // 使用 marked 解析 markdown
-  messageEl.innerHTML = `<p>${window.marked.parse(content)}</p>`;
+  // 新增標籤
+  const label = role === "user" ? "User:" : "AI:";
+  messageEl.innerHTML = `<div class='msg-label'>${label}</div><div class='msg-content'>${window.marked.parse(content)}</div>`;
   chatMessages.appendChild(messageEl);
 
   // Scroll to bottom
