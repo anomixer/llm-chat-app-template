@@ -163,6 +163,21 @@
       .msg-content {
         /* markdown 內容區塊 */
       }
+      #error-toast {
+        position: fixed;
+        left: 50%;
+        bottom: 2rem;
+        transform: translateX(-50%);
+        background: #e74c3c;
+        color: #fff;
+        padding: 0.75em 2em;
+        border-radius: 6px;
+        font-weight: bold;
+        font-size: 1em;
+        z-index: 9999;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        transition: opacity 0.3s;
+      }
     </style>
   </head>
   <body id="body">
@@ -196,6 +211,7 @@
     <footer>
       <p id="footer-text">Cloudflare Workers AI Chat Template &copy; 2025</p>
     </footer>
+    <div id="error-toast" style="display:none;"></div>
 
     <!-- Chat app script -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>

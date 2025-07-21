@@ -122,10 +122,7 @@ async function sendMessage() {
     chatHistory.push({ role: "assistant", content: responseText });
   } catch (error) {
     console.error("Error:", error);
-    addMessageToChat(
-      "assistant",
-      I18N['error'][getLang()],
-    );
+    showErrorToast(I18N['error'][getLang()]);
   } finally {
     // Hide typing indicator
     typingIndicator.classList.remove("visible");
@@ -369,3 +366,16 @@ document.getElementById('user-input').placeholder = I18N['user-input'][getLang()
 
 // 初始化時只呼叫 renderWelcome 一次
 if (!chatMessages.querySelector('.assistant-message[data-welcome]')) renderWelcome();
+
+// ===== 錯誤提示條 =====
+function showErrorToast(msg) {
+  const toast = document.getElementById('error-toast');
+  toast.textContent = msg;
+  toast.style.display = 'block';
+  toast.style.opacity = '1';
+  clearTimeout(showErrorToast._timer);
+  showErrorToast._timer = setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => { toast.style.display = 'none'; }, 300);
+  }, 3000);
+}
