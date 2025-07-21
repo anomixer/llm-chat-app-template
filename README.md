@@ -25,7 +25,16 @@ This template demonstrates how to build an AI-powered chat interface using Cloud
 - 🛠️ Built with TypeScript and Cloudflare Workers
 - 📱 Mobile-friendly design
 - 🔄 Maintains chat history on the client
-<!-- dash-content-end -->
+
+### Enhanced Features (by Cursor)
+
+- 🌏 Five-language UI & AI prompt (EN, ZH-TW, ZH-CN, JA, KO)
+- 🌐 Auto-detect browser language for UI and AI
+- 🌙 Dark theme toggle
+- 📝 Markdown support in chat
+- 🏷️ User/AI message labels
+- 🚨 Error toast notification (not in chat window)
+- 📄 Multi-language README files
 
 ### Getting Started
 

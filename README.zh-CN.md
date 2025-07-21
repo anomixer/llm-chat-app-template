@@ -23,6 +23,16 @@
 - 🛠️ 使用 TypeScript 与 Cloudflare Workers 开发
 - 📱 移动端友好设计
 - 🔄 客户端维护聊天记录
+
+### 增强功能（由 Cursor AI 协助）
+
+- 🌏 五国语言界面与 AI prompt（英文、繁中、简中、日文、韩文）
+- 🌐 自动检测浏览器语言
+- 🌙 深色主题切换
+- 📝 支持 Markdown 语法
+- 🏷️ User/AI 消息标签
+- 🚨 错误 toast 提示（不进对话框）
+- 📄 多语 README 文件
 <!-- dash-content-end -->
 
 ### 快速开始

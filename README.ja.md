@@ -22,7 +22,17 @@ Cloudflare Workers AI を活用した、すぐにデプロイ可能なシンプ�
 - 🧠 Cloudflare Workers AI LLMs 搭載
 - 🛠️ TypeScript と Cloudflare Workers で構築
 - 📱 モバイルフレンドリー
-- 🔄 クライアント側でチャット履歴を保持
+- �� クライアント側でチャット履歴を保持
+
+### 強化機能（Cursor AIによる）
+
+- 🌏 5言語UIとAIプロンプト（英語・繁体字中国語・簡体字中国語・日本語・韓国語）
+- 🌐 ブラウザ言語自動判別
+- 🌙 ダークテーマ切替
+- 📝 Markdown対応
+- 🏷️ User/AIラベル
+- 🚨 エラートースト通知（チャット欄に表示しない）
+- 📄 多言語README
 <!-- dash-content-end -->
 
 ### はじめに
