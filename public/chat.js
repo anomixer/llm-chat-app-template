@@ -332,14 +332,7 @@ function renderWelcome() {
 }
 // ===== 修改 addMessageToChat 支援多語 label =====
 // ... existing code ...
-    addMessageToChat(
-      "assistant",
-      I18N['error'][getLang()],
-    );
-// ... existing code ...
 // ===== 修改 sendMessage 內 assistantMessageEl label 多語 =====
-// ... existing code ...
-    assistantMessageEl.innerHTML = `<div class='msg-label'>${I18N['ai-label'][getLang()]}</div><div class='msg-content'></div>`;
 // ... existing code ...
 // ===== 修改主題切換按鈕多語 =====
 function setTheme(isDark) {
