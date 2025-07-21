@@ -156,3 +156,34 @@ function addMessageToChat(role, content) {
   // Scroll to bottom
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
+
+// 主題切換功能
+const themeToggle = document.getElementById("theme-toggle");
+const body = document.getElementById("body");
+
+function setTheme(isDark) {
+  if (isDark) {
+    body.classList.add("dark");
+    themeToggle.textContent = "☀️ 切換主題";
+  } else {
+    body.classList.remove("dark");
+    themeToggle.textContent = "🌙 切換主題";
+  }
+}
+
+// 讀取 localStorage 或跟隨系統
+function getPreferredTheme() {
+  const saved = localStorage.getItem("theme");
+  if (saved === "dark") return true;
+  if (saved === "light") return false;
+  // 沒有儲存時跟隨系統
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+setTheme(getPreferredTheme());
+
+themeToggle.addEventListener("click", () => {
+  const isDark = !body.classList.contains("dark");
+  setTheme(isDark);
+  localStorage.setItem("theme", isDark ? "dark" : "light");
+});
