@@ -38,8 +38,8 @@ Cloudflare Workers AI を活用した、すぐにデプロイ可能なシンプ�
 1. リポジトリをクローン：
 
    ```bash
-   git clone https://github.com/cloudflare/templates.git
-   cd templates/llm-chat-app
+   git clone http://github.com/anomixer/llm-chat-app-template
+   cd llm-chat-app-template
    ```
 
 2. 依存関係をインストール：

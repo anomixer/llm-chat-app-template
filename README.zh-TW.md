@@ -38,8 +38,8 @@
 1. 下載本專案：
 
    ```bash
-   git clone https://github.com/cloudflare/templates.git
-   cd templates/llm-chat-app
+   git clone http://github.com/anomixer/llm-chat-app-template
+   cd llm-chat-app-template
    ```
 
 2. 安裝相依套件：

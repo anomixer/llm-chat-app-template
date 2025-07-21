@@ -38,8 +38,8 @@ Cloudflare Workers AI 기반의 간단하고 즉시 배포 가능한 챗봇 애�
 1. 저장소 클론:
 
    ```bash
-   git clone https://github.com/cloudflare/templates.git
-   cd templates/llm-chat-app
+   git clone http://github.com/anomixer/llm-chat-app-template
+   cd llm-chat-app-template
    ```
 
 2. 의존성 설치:
