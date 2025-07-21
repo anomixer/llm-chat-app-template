@@ -45,3 +45,8 @@
 2. 安装依赖：
 
    ```
+```
+
+---
+
+本项目由 [Cursor](https://github.com/cursor/cursor) AI 协助优化

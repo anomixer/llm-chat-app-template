@@ -140,3 +140,7 @@ UI 樣式寫於 `public/index.html` 的 `<style>` 區塊。可直接調整 CSS �
 - [Cloudflare Workers 文件](https://developers.cloudflare.com/workers/)
 - [Cloudflare Workers AI 文件](https://developers.cloudflare.com/workers-ai/)
 - [Workers AI 模型](https://developers.cloudflare.com/workers-ai/models/) 
+
+---
+
+本專案由 [Cursor](https://github.com/cursor/cursor) AI 協助優化 

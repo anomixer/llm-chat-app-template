@@ -140,3 +140,7 @@ UI 스타일은 `public/index.html`의 `<style>` 섹션에 정의되어 있습�
 - [Cloudflare Workers 문서](https://developers.cloudflare.com/workers/)
 - [Cloudflare Workers AI 문서](https://developers.cloudflare.com/workers-ai/)
 - [Workers AI 모델](https://developers.cloudflare.com/workers-ai/models/) 
+
+---
+
+이 프로젝트는 [Cursor](https://github.com/cursor/cursor) AI의 도움으로 개선되었습니다 

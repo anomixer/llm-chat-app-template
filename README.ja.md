@@ -140,3 +140,7 @@ UI スタイルは `public/index.html` の `<style>` セクションに記述さ
 - [Cloudflare Workers ドキュメント](https://developers.cloudflare.com/workers/)
 - [Cloudflare Workers AI ドキュメント](https://developers.cloudflare.com/workers-ai/)
 - [Workers AI モデル](https://developers.cloudflare.com/workers-ai/models/) 
+
+---
+
+本プロジェクトは [Cursor](https://github.com/cursor/cursor) AI の支援で改善されています 
