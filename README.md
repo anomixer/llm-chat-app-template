@@ -1,6 +1,6 @@
 # LLM Chat Application Template
 
-> Other languages: [繁體中文 (README.zh-TW.md)](README.zh-TW.md) | [简体中文 (README.zh-CN.md)](README.zh-CN.md) | [日本語 (README.ja.md)](README.ja.md) | [한국어 (README.ko.md)](README.ko.md)
+> Other languages: [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md) | [日本語](README.ja.md) | [한국어](README.ko.md)
 
 A simple, ready-to-deploy chat application template powered by Cloudflare Workers AI. This template provides a clean starting point for building AI chat applications with streaming responses.
 
