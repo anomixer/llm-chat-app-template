@@ -141,13 +141,18 @@ async function sendMessage() {
 /**
  * Helper function to add message to chat
  */
-function addMessageToChat(role, content) {
+function addMessageToChat(role, content, isWelcome) {
   const messageEl = document.createElement("div");
   messageEl.className = `message ${role}-message`;
+  if (isWelcome) messageEl.setAttribute('data-welcome', '1');
   // 多語 label
   const label = role === "user" ? I18N['user-label'][getLang()] : I18N['ai-label'][getLang()];
   messageEl.innerHTML = `<div class='msg-label'>${label}</div><div class='msg-content'>${window.marked.parse(content)}</div>`;
-  chatMessages.appendChild(messageEl);
+  if (isWelcome && chatMessages.firstChild) {
+    chatMessages.insertBefore(messageEl, chatMessages.firstChild);
+  } else {
+    chatMessages.appendChild(messageEl);
+  }
 
   // Scroll to bottom
   chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -318,8 +323,15 @@ themeToggle.addEventListener("click", () => {
 
 // ===== 歡迎訊息動態插入 =====
 function renderWelcome() {
-  chatMessages.innerHTML = '';
-  addMessageToChat('assistant', I18N['welcome'][getLang()]);
+  // 若已存在歡迎訊息則只更新內容，不重複插入
+  let firstMsg = chatMessages.querySelector('.assistant-message[data-welcome]');
+  if (!firstMsg) {
+    addMessageToChat('assistant', I18N['welcome'][getLang()], true);
+  } else {
+    // 更新語言時只改內容
+    firstMsg.querySelector('.msg-content').innerHTML = window.marked.parse(I18N['welcome'][getLang()]);
+    firstMsg.querySelector('.msg-label').textContent = I18N['ai-label'][getLang()];
+  }
 }
 // ===== 修改 addMessageToChat 支援多語 label =====
 // ... existing code ...
@@ -354,3 +366,6 @@ document.getElementById('send-button').textContent = I18N['send-button'][getLang
 // ... existing code ...
 // ===== textarea 多語 =====
 document.getElementById('user-input').placeholder = I18N['user-input'][getLang()];
+
+// 初始化時只呼叫 renderWelcome 一次
+if (!chatMessages.querySelector('.assistant-message[data-welcome]')) renderWelcome();
