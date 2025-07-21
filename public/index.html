@@ -15,6 +15,17 @@
         --user-msg-bg: #fff2e6;
         --assistant-msg-bg: #f3f4f6;
       }
+      /* Dark theme variables */
+      .dark {
+        --primary-color: #ffb347;
+        --primary-hover: #f6821f;
+        --light-bg: #181a1b;
+        --border-color: #333843;
+        --text-color: #f3f4f6;
+        --text-light: #b0b3b8;
+        --user-msg-bg: #2a2d31;
+        --assistant-msg-bg: #23272f;
+      }
 
       * {
         box-sizing: border-box;
@@ -31,6 +42,8 @@
         max-width: 800px;
         margin: 0 auto;
         padding: 1rem;
+        background: var(--light-bg);
+        transition: background 0.3s, color 0.3s;
       }
 
       header {
@@ -136,10 +149,11 @@
       }
     </style>
   </head>
-  <body>
+  <body id="body">
     <header>
       <h1>Cloudflare AI Chat</h1>
       <p>Powered by Cloudflare Workers AI</p>
+      <button id="theme-toggle" style="position:absolute;top:1rem;right:1rem;">🌙 切換主題</button>
     </header>
 
     <div class="chat-container">
