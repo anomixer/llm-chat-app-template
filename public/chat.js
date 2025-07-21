@@ -205,11 +205,11 @@ const I18N = {
     'ko': 'Cloudflare Workers AI 기반',
   },
   'theme-toggle': {
-    'en': '🌙 Theme',
-    'zh-TW': '🌙 主題',
-    'zh-CN': '🌙 主题',
-    'ja': '🌙 テーマ',
-    'ko': '🌙 테마',
+    'en': 'Theme',
+    'zh-TW': '主題',
+    'zh-CN': '主题',
+    'ja': 'テーマ',
+    'ko': '테마',
   },
   'lang-toggle': {
     'en': '🌐 Language',
