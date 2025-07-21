@@ -282,6 +282,14 @@ function getLang() {
 function setLang(lang) {
   localStorage.setItem('lang', lang);
 }
+// ===== 語言 icon 對應表 =====
+const LANG_ICONS = {
+  'en': 'EN',
+  'zh-TW': 'TW',
+  'zh-CN': 'CN',
+  'ja': 'JP',
+  'ko': 'KO',
+};
 function updateI18nUI() {
   const lang = getLang();
   for (const id in I18N) {
@@ -290,6 +298,8 @@ function updateI18nUI() {
     if (el) {
       if (id === 'user-input') {
         el.placeholder = I18N[id][lang];
+      } else if (id === 'lang-toggle') {
+        el.textContent = LANG_ICONS[lang] + ' ' + I18N[id][lang];
       } else {
         el.textContent = I18N[id][lang];
       }
@@ -372,3 +382,6 @@ function showErrorToast(msg) {
     setTimeout(() => { toast.style.display = 'none'; }, 300);
   }, 3000);
 }
+
+// ===== theme 預設為 dark =====
+setTheme(true);
