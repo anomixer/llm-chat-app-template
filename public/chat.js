@@ -11,13 +11,7 @@ const sendButton = document.getElementById("send-button");
 const typingIndicator = document.getElementById("typing-indicator");
 
 // Chat state
-let chatHistory = [
-  {
-    role: "assistant",
-    content:
-      "Hello! I'm an LLM chat app powered by Cloudflare Workers AI. How can I help you today?",
-  },
-];
+let chatHistory = [];
 let isProcessing = false;
 
 // Auto-resize textarea as user types
@@ -313,6 +307,13 @@ langToggle.addEventListener('click', () => {
   updateI18nUI();
   // 重新渲染歡迎訊息（如果對話為空）
   if (chatMessages.children.length === 0) renderWelcome();
+});
+
+// 恢復主題切換按鈕事件
+themeToggle.addEventListener("click", () => {
+  const isDark = !body.classList.contains("dark");
+  setTheme(isDark);
+  localStorage.setItem("theme", isDark ? "dark" : "light");
 });
 
 // ===== 歡迎訊息動態插入 =====
