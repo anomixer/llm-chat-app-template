@@ -1,9 +1,9 @@
 /**
- * LLM Chat App Frontend (v6 - Final Fix Attempt)
+ * LLM Chat App Frontend (v7 - Theme Icon & Welcome Timestamp Fix)
  *
  * Addresses:
- * - AI message box disappearing after thinking.
- * - Language button missing country codes.
+ * - Corrects theme toggle icon logic.
+ * - Adds timestamp to the welcome message.
  */
 
 // DOM elements
@@ -76,8 +76,8 @@ function updateI18nUI() {
     document.getElementById('footer-text').textContent = I18N['footer-text'][lang];
 
     // Update buttons with icons and text
-    themeToggle.textContent = (isDark ? "☀️ " : "🌙 ") + I18N['theme-toggle'][lang];
-    langToggle.textContent = LANG_ICONS[lang] + ' ' + I18N['lang-toggle'][lang]; // FIXED: Added LANG_ICONS
+    themeToggle.textContent = (isDark ? "🌙 " : "☀️ ") + I18N['theme-toggle'][lang]; // FIXED: Corrected icon logic
+    langToggle.textContent = LANG_ICONS[lang] + ' ' + I18N['lang-toggle'][lang]; 
     clearChatButton.textContent = I18N['clear-chat-button'][lang];
     saveChatButton.textContent = I18N['save-chat-button'][lang];
 }
@@ -114,7 +114,7 @@ function addMessageToChat(role, content, options = {}) {
     
     let fullLabel;
     if (isWelcome) {
-        fullLabel = labelText + ':';
+        fullLabel = `${labelText} ${formatTimestamp(timestamp)}:`; // FIXED: Added timestamp to welcome message
         messageEl.setAttribute('data-welcome', '1');
     } else if (isPlaceholder) {
         fullLabel = labelText + ':'; // Placeholder has no timestamp initially
@@ -200,15 +200,13 @@ async function sendMessage() {
             }
         }
         
-        // FIXED: Only remove the placeholder if the final response is empty.
-        // And only add to history if there is a response.
-        if (responseText) {
-            chatHistory.push({ role: "assistant", content: responseText, timestamp: assistantTimestamp });
-        } else {
-           // If AI sent no actual text, update the placeholder to indicate no response
+        // FIXED: If AI sent no actual text, update the placeholder to indicate no response
+        if (!responseText) {
            assistantMessageEl.querySelector(".msg-content").innerHTML = I18N['error'][getLang()]; 
            assistantMessageEl.classList.add('error-message');
            chatHistory.push({ role: "assistant", content: I18N['error'][getLang()], timestamp: assistantTimestamp || new Date() });
+        } else {
+            chatHistory.push({ role: "assistant", content: responseText, timestamp: assistantTimestamp });
         }
 
     } catch (error) {
