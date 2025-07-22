@@ -9,6 +9,8 @@ const chatMessages = document.getElementById("chat-messages");
 const userInput = document.getElementById("user-input");
 const sendButton = document.getElementById("send-button");
 const typingIndicator = document.getElementById("typing-indicator");
+const clearChatButton = document.getElementById("clear-chat-button");
+const saveChatButton = document.getElementById("save-chat-button");
 
 // Chat state
 let chatHistory = [];
@@ -217,6 +219,20 @@ const I18N = {
     'ja': 'テーマ',
     'ko': '테마',
   },
+  'clear-chat-button': {
+    'en': 'Clear',
+    'zh-TW': '清除',
+    'zh-CN': '清除',
+    'ja': 'クリア',
+    'ko': '지우기',
+  },
+  'save-chat-button': {
+    'en': 'Save',
+    'zh-TW': '儲存',
+    'zh-CN': '保存',
+    'ja': '保存',
+    'ko': '저장',
+  },
   'lang-toggle': {
     'en': '🌐 Language',
     'zh-TW': '🌐 語言',
@@ -306,6 +322,9 @@ function updateI18nUI() {
         el.placeholder = I18N[id][lang];
       } else if (id === 'lang-toggle') {
         el.textContent = LANG_ICONS[lang] + ' ' + I18N[id][lang];
+      } else if (id === 'theme-toggle') {
+        const isDark = getThemeIsDark();
+        el.textContent = (isDark ? "☀️ " : "🌙 ") + I18N[id][lang];
       } else {
         el.textContent = I18N[id][lang];
       }
@@ -332,6 +351,25 @@ themeToggle.addEventListener("click", () => {
   const isDark = !body.classList.contains("dark");
   setTheme(isDark);
   localStorage.setItem("theme", isDark ? "dark" : "light");
+});
+
+// "Clear Chat" button
+clearChatButton.addEventListener("click", () => {
+  chatMessages.innerHTML = '';
+  chatHistory = [];
+  renderWelcome();
+});
+
+// "Save Chat" button
+saveChatButton.addEventListener("click", () => {
+  const chatText = chatHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n\n');
+  const blob = new Blob([chatText], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'chat.txt';
+  a.click();
+  URL.revokeObjectURL(url);
 });
 
 // ===== 歡迎訊息動態插入 =====
