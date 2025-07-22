@@ -144,7 +144,8 @@ function addMessageToChat(role, content, isWelcome, timestamp) {
   const timeString = timestamp ? `(${timestamp.getHours().toString().padStart(2, '0')}:${timestamp.getMinutes().toString().padStart(2, '0')}:${timestamp.getSeconds().toString().padStart(2, '0')})` : '';
 
   // 多語 label
-  const label = role === "user" ? I18N['user-label'][getLang()] : I18N['ai-label'][getLang()];
+  const labelKey = role === 'assistant' ? 'ai-label' : 'user-label';
+  const label = I18N[labelKey][getLang()];
   const fullLabel = isWelcome ? label : `${label} ${timeString}:`;
 
   messageEl.innerHTML = `<div class='msg-label'>${fullLabel}</div><div class='msg-content'>${window.marked.parse(content)}</div>`;
@@ -360,7 +361,9 @@ saveChatButton.addEventListener("click", () => {
   const chatText = chatHistory.map(msg => {
     const time = new Date(msg.timestamp);
     const timeString = `(${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}:${time.getSeconds().toString().padStart(2, '0')})`;
-    return `${I18N[msg.role + '-label'][getLang()]}: ${timeString}\n${msg.content}`;
+    const roleLabelKey = msg.role === 'assistant' ? 'ai-label' : 'user-label';
+    const label = I18N[roleLabelKey][getLang()];
+    return `${label} ${timeString}:\n${msg.content}`;
   }).join('\n\n');
   const blob = new Blob([chatText], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
@@ -375,14 +378,19 @@ saveChatButton.addEventListener("click", () => {
 function renderWelcome() {
   // 若已存在歡迎訊息則只更新內容，不重複插入
   let firstMsg = chatMessages.querySelector('.assistant-message[data-welcome]');
-  const welcomeTimestamp = new Date();
   if (!firstMsg) {
-    addMessageToChat('assistant', I18N['welcome'][getLang()], true, welcomeTimestamp);
+    addMessageToChat('assistant', I18N['welcome'][getLang()], true);
   } else {
     // 更新語言時只改內容
     firstMsg.querySelector('.msg-content').innerHTML = window.marked.parse(I18N['welcome'][getLang()]);
+    firstMsg.querySelector('.msg-label').textContent = I18N['ai-label'][getLang()];
+  }
+  // Add timestamp to welcome message
+  const welcomeMsg = chatMessages.querySelector('.assistant-message[data-welcome]');
+  if (welcomeMsg) {
+    const welcomeTimestamp = new Date();
     const timeString = `(${welcomeTimestamp.getHours().toString().padStart(2, '0')}:${welcomeTimestamp.getMinutes().toString().padStart(2, '0')}:${welcomeTimestamp.getSeconds().toString().padStart(2, '0')})`;
-    firstMsg.querySelector('.msg-label').textContent = `${I18N['ai-label'][getLang()]} ${timeString}:`;
+    welcomeMsg.querySelector('.msg-label').textContent += ` ${timeString}:`;
   }
 }
 // ===== 修改 addMessageToChat 支援多語 label =====
