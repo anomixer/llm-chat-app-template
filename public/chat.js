@@ -1,19 +1,12 @@
-/**
- * LLM Chat App Frontend (v2 - Rewritten for Stability)
+'''/**
+ * LLM Chat App Frontend (v3 - Stable Rewrite)
  *
- * Handles all UI interactions, state management, and API communication.
- * Features:
- * - Streaming AI responses via SSE
- * - Multilingual UI & Prompts
- * - Light/Dark theme switching
- * - Markdown rendering for messages
- * - Timestamps for all messages
- * - Clear & Save chat functionality
- * - Robust error handling and initialization
+ * This version is a complete rewrite to ensure stability and includes all
+ * previously discussed features.
  */
-
 document.addEventListener('DOMContentLoaded', () => {
-  // ===== DOM Elements =====
+
+  // ===== 1. DOM Element Retrieval =====
   const chatMessages = document.getElementById("chat-messages");
   const userInput = document.getElementById("user-input");
   const sendButton = document.getElementById("send-button");
@@ -24,11 +17,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const saveChatButton = document.getElementById("save-chat-button");
   const body = document.getElementById("body");
 
-  // ===== Chat State =====
+  // ===== 2. State Management =====
   let chatHistory = [];
   let isProcessing = false;
 
-  // ===== Localization (I18N) =====
+  // ===== 3. Localization & Constants =====
   const LANGS = [
     { code: 'en', label: 'English' },
     { code: 'zh-TW', label: '繁體中文' },
@@ -36,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
     { code: 'ja', label: '日本語' },
     { code: 'ko', label: '한국어' },
   ];
-  const LANG_ICONS = { 'en': 'EN', 'zh-TW': 'TW', 'zh-CN': 'CN', 'ja': 'JP', 'ko': 'KO' };
   const I18N = {
     'header-title': { 'en': 'Cloudflare AI Chat', 'zh-TW': 'Cloudflare AI 聊天室', 'zh-CN': 'Cloudflare AI 聊天室', 'ja': 'Cloudflare AI チャット', 'ko': 'Cloudflare AI 채팅' },
     'header-desc': { 'en': 'Powered by Cloudflare Workers AI', 'zh-TW': '由 Cloudflare Workers AI 驅動', 'zh-CN': '由 Cloudflare Workers AI 驱动', 'ja': 'Cloudflare Workers AI 搭載', 'ko': 'Cloudflare Workers AI 기반' },
@@ -57,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     'en': 'You are a helpful, friendly assistant. Provide concise and accurate responses.', 'zh-TW': '你是一個樂於助人且友善的助理，請用簡潔且準確的方式回覆。', 'zh-CN': '你是一个乐于助人且友善的助手，请用简洁且准确的方式回复。', 'ja': 'あなたは親切でフレンドリーなアシスタントです。簡潔かつ正確に回答してください。', 'ko': '당신은 친절하고 도움이 되는 어시스턴트입니다. 간결하고 정확하게 답변해 주세요.',
   };
 
-  // ===== Helper Functions =====
+  // ===== 4. Helper Functions =====
   const getLang = () => localStorage.getItem('lang') || 'en';
   const setLang = (lang) => localStorage.setItem('lang', lang);
   const getThemeIsDark = () => body.classList.contains("dark");
@@ -72,28 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return 'en';
   }
 
-  function setTheme(isDark) {
-    body.classList.toggle("dark", isDark);
-    const lang = getLang();
-    themeToggle.textContent = (isDark ? "☀️ " : "🌙 ") + I18N['theme-toggle'][lang];
-  }
-
-  function updateI18nUI() {
-    const lang = getLang();
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-      const key = el.dataset.i18n;
-      if (I18N[key] && I18N[key][lang]) {
-        if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
-          el.placeholder = I18N[key][lang];
-        } else {
-          el.textContent = I18N[key][lang];
-        }
-      }
-    });
-    langToggle.textContent = LANG_ICONS[lang];
-    setTheme(getThemeIsDark()); // Also update theme button icon
-  }
-
   function showErrorToast(msg) {
     const toast = document.getElementById('error-toast');
     toast.textContent = msg;
@@ -105,34 +75,60 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 3000);
   }
 
-  // ===== Core Chat Logic =====
+  // ===== 5. UI Update Functions =====
+  function setTheme(isDark) {
+    body.classList.toggle("dark", isDark);
+    themeToggle.textContent = (isDark ? "☀️ " : "🌙 ") + I18N['theme-toggle'][getLang()];
+  }
 
-  function addMessageToChat(role, content, { isWelcome = false, timestamp = new Date() } = {}) {
+  function updateUIForLanguage() {
+    const lang = getLang();
+    // Set text for all elements with a data-i18n key
+    document.querySelectorAll('[data-i18n-key]').forEach(el => {
+        const key = el.getAttribute('data-i18n-key');
+        if (el.placeholder !== undefined) {
+            el.placeholder = I18N[key][lang];
+        } else {
+            el.textContent = I18N[key][lang];
+        }
+    });
+    // Handle complex buttons separately to include icons
+    langToggle.textContent = '🌐 ' + I18N['lang-toggle'][lang];
+    clearChatButton.textContent = I18N['clear-chat-button'][lang];
+    saveChatButton.textContent = I18N['save-chat-button'][lang];
+    // Re-apply theme to update theme button text
+    setTheme(getThemeIsDark());
+  }
+
+  // ===== 6. Core Chat Functions =====
+  function addMessageToChat(role, content, options = {}) {
+    const { isWelcome = false, timestamp = new Date() } = options;
+    
     const messageEl = document.createElement("div");
     messageEl.className = `message ${role}-message`;
 
     const labelKey = role === 'assistant' ? 'ai-label' : 'user-label';
     const labelText = I18N[labelKey][getLang()];
     
-    const timeText = formatTimestamp(timestamp);
-    const fullLabel = `${labelText} ${timeText}:`;
+    let fullLabel;
+    if (isWelcome) {
+        // Welcome message has no timestamp
+        fullLabel = labelText + ':';
+        messageEl.setAttribute('data-welcome', '1');
+    } else {
+        fullLabel = `${labelText} ${formatTimestamp(timestamp)}:`;
+    }
 
-    messageEl.innerHTML = `<div class='msg-label'>${fullLabel}</div><div class='msg-content'></div>`;
+    messageEl.innerHTML = `<div class="msg-label">${fullLabel}</div><div class="msg-content"></div>`;
     messageEl.querySelector('.msg-content').innerHTML = window.marked.parse(content);
 
-    if (isWelcome) {
-      messageEl.setAttribute('data-welcome', '1');
-      // Welcome message always at top
-      chatMessages.prepend(messageEl);
-    } else {
-      chatMessages.appendChild(messageEl);
-    }
+    chatMessages.appendChild(messageEl);
     chatMessages.scrollTop = chatMessages.scrollHeight;
     return messageEl;
   }
-  
-  function renderWelcome() {
-    chatMessages.innerHTML = ''; // Clear previous messages
+
+  function renderWelcomeMessage() {
+    chatMessages.innerHTML = '';
     addMessageToChat('assistant', I18N['welcome'][getLang()], { isWelcome: true });
   }
 
@@ -152,13 +148,10 @@ document.addEventListener('DOMContentLoaded', () => {
     userInput.value = "";
     userInput.style.height = "auto";
 
-    // Create placeholder for AI response
-    const assistantMessageEl = document.createElement("div");
-    assistantMessageEl.className = "message assistant-message";
-    const assistantLabelText = I18N['ai-label'][getLang()];
-    assistantMessageEl.innerHTML = `<div class='msg-label'>${assistantLabelText}:</div><div class='msg-content'></div>`;
-    chatMessages.appendChild(assistantMessageEl);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+    const assistantMessageEl = addMessageToChat("assistant", "", { timestamp: new Date() });
+    assistantMessageEl.querySelector('.msg-content').innerHTML = '<span class="thinking-dot">.</span><span class="thinking-dot">.</span><span class="thinking-dot">.</span>';
+    assistantMessageEl.querySelector('.msg-label').textContent = I18N['ai-label'][getLang()] + ':';
+
 
     try {
       const response = await fetch("/api/chat", {
@@ -170,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ]}),
       });
 
-      if (!response.ok) throw new Error("API response not OK");
+      if (!response.ok) throw new Error(`API error: ${response.statusText}`);
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -194,15 +187,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (firstChunk) {
                   firstChunk = false;
                   assistantTimestamp = new Date();
-                  const timeText = formatTimestamp(assistantTimestamp);
-                  assistantMessageEl.querySelector('.msg-label').textContent = `${assistantLabelText} ${timeText}:`;
+                  const labelText = I18N['ai-label'][getLang()];
+                  assistantMessageEl.querySelector('.msg-label').textContent = `${labelText} ${formatTimestamp(assistantTimestamp)}:`;
+                  assistantMessageEl.querySelector('.msg-content').innerHTML = ''; // Clear thinking dots
                 }
                 responseText += data.response;
                 assistantMessageEl.querySelector(".msg-content").innerHTML = window.marked.parse(responseText);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
               }
             } catch (e) {
-              console.error("Error parsing SSE data:", e);
+              // Ignore lines that are not valid JSON
             }
           }
         }
@@ -210,14 +204,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (responseText) {
         chatHistory.push({ role: "assistant", content: responseText, timestamp: assistantTimestamp });
       } else {
-         // If AI gave no response, remove the placeholder
          assistantMessageEl.remove();
       }
 
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Chat Error:", error);
       showErrorToast(I18N['error'][getLang()]);
-      assistantMessageEl.remove(); // Remove placeholder on error
+      assistantMessageEl.remove();
     } finally {
       isProcessing = false;
       userInput.disabled = false;
@@ -227,94 +220,94 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // ===== Event Listeners =====
-  sendButton.addEventListener("click", sendMessage);
-  userInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  });
-  userInput.addEventListener("input", function () {
-    this.style.height = "auto";
-    this.style.height = this.scrollHeight + "px";
-  });
+  // ===== 7. Event Listeners =====
+  function setupEventListeners() {
+    sendButton.addEventListener("click", sendMessage);
+    userInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+    userInput.addEventListener("input", function () {
+      this.style.height = "auto";
+      this.style.height = this.scrollHeight + "px";
+    });
 
-  themeToggle.addEventListener("click", () => {
-    const isDark = !getThemeIsDark();
-    localStorage.setItem("theme", isDark ? "dark" : "light");
-    setTheme(isDark);
-  });
+    themeToggle.addEventListener("click", () => {
+      const isDark = !getThemeIsDark();
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+      setTheme(isDark);
+    });
 
-  langToggle.addEventListener('click', () => {
-    const currentLang = getLang();
-    const currentIndex = LANGS.findIndex(l => l.code === currentLang);
-    const nextLang = LANGS[(currentIndex + 1) % LANGS.length].code;
-    setLang(nextLang);
-    updateI18nUI();
-    // Re-render welcome message with new language
-    const welcomeMsg = chatMessages.querySelector('[data-welcome]');
-    if (welcomeMsg && chatHistory.length === 0) {
-        renderWelcome();
-    }
-  });
+    langToggle.addEventListener('click', () => {
+      const currentLang = getLang();
+      const currentIndex = LANGS.findIndex(l => l.code === currentLang);
+      const nextLang = LANGS[(currentIndex + 1) % LANGS.length].code;
+      setLang(nextLang);
+      updateUIForLanguage();
+      // If only welcome message is present, re-render it in new language
+      if (chatHistory.length === 0) {
+          renderWelcomeMessage();
+      }
+    });
 
-  clearChatButton.addEventListener("click", () => {
-    chatHistory = [];
-    renderWelcome();
-  });
+    clearChatButton.addEventListener("click", () => {
+      chatHistory = [];
+      renderWelcomeMessage();
+    });
 
-  saveChatButton.addEventListener("click", () => {
-    if (chatHistory.length === 0) return;
-    const lang = getLang();
-    const chatText = chatHistory.map(msg => {
-      const labelKey = msg.role === 'assistant' ? 'ai-label' : 'user-label';
-      const label = I18N[labelKey][lang];
-      const time = formatTimestamp(new Date(msg.timestamp));
-      return `${label} ${time}:
+    saveChatButton.addEventListener("click", () => {
+      if (chatHistory.length === 0) return;
+      const lang = getLang();
+      const chatText = chatHistory.map(msg => {
+        const labelKey = msg.role === 'assistant' ? 'ai-label' : 'user-label';
+        const label = I18N[labelKey][lang];
+        const time = formatTimestamp(new Date(msg.timestamp));
+        return `${label} ${time}:
 ${msg.content}`;
-    }).join('
+      }).join('
 
 ');
 
-    const blob = new Blob([chatText], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'chat-history.txt';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  });
+      const blob = new Blob([chatText], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'chat-history.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  }
 
-  // ===== Initialization =====
+  // ===== 8. Initialization =====
   function init() {
-    // Set language
+    // Assign i18n keys to elements that need text updates
+    document.getElementById('header-title').setAttribute('data-i18n-key', 'header-title');
+    document.getElementById('header-desc').setAttribute('data-i18n-key', 'header-desc');
+    document.getElementById('typing-text').setAttribute('data-i18n-key', 'typing-text');
+    document.getElementById('user-input').setAttribute('data-i18n-key', 'user-input');
+    document.getElementById('send-button').setAttribute('data-i18n-key', 'send-button');
+    document.getElementById('footer-text').setAttribute('data-i18n-key', 'footer-text');
+
+    // Set initial language
     const savedLang = getLang();
-    if (!savedLang || !LANGS.some(l => l.code === savedLang)) {
+    if (!LANGS.some(l => l.code === savedLang)) {
       setLang(detectBrowserLang());
     }
 
-    // Set theme
+    // Set initial theme (default to dark)
     const savedTheme = localStorage.getItem("theme");
-    const isDark = savedTheme ? savedTheme === 'dark' : true; // Default to dark
-    setTheme(isDark);
+    setTheme(savedTheme === 'light' ? false : true);
     
-    // Add I18N hooks to static elements
-    document.getElementById('header-title').dataset.i18n = 'header-title';
-    document.getElementById('header-desc').dataset.i18n = 'header-desc';
-    document.getElementById('typing-text').dataset.i18n = 'typing-text';
-    document.getElementById('user-input').dataset.i18n = 'user-input';
-    document.getElementById('send-button').dataset.i18n = 'send-button';
-    document.getElementById('footer-text').dataset.i18n = 'footer-text';
-    document.getElementById('clear-chat-button').dataset.i18n = 'clear-chat-button';
-    document.getElementById('save-chat-button').dataset.i18n = 'save-chat-button';
-    
-    updateI18nUI();
-    renderWelcome();
+    setupEventListeners();
+    updateUIForLanguage();
+    renderWelcomeMessage();
     userInput.focus();
   }
 
   init();
 });
+''
