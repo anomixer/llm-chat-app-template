@@ -64,7 +64,10 @@ async function sendMessage() {
     // Create new assistant response element
     const assistantMessageEl = document.createElement("div");
     assistantMessageEl.className = "message assistant-message";
-    assistantMessageEl.innerHTML = `<div class='msg-label'>${I18N['ai-label'][getLang()]}</div><div class='msg-content'></div>`;
+    const now = new Date();
+    const timeString = `(${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')})`;
+    const assistantLabel = `${I18N['ai-label'][getLang()]} ${timeString}:`;
+    assistantMessageEl.innerHTML = `<div class='msg-label'>${assistantLabel}</div><div class='msg-content'></div>`;
     chatMessages.appendChild(assistantMessageEl);
 
     // Scroll to bottom
@@ -150,9 +153,15 @@ function addMessageToChat(role, content, isWelcome) {
   const messageEl = document.createElement("div");
   messageEl.className = `message ${role}-message`;
   if (isWelcome) messageEl.setAttribute('data-welcome', '1');
+
+  const now = new Date();
+  const timeString = `(${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')})`;
+
   // 多語 label
   const label = role === "user" ? I18N['user-label'][getLang()] : I18N['ai-label'][getLang()];
-  messageEl.innerHTML = `<div class='msg-label'>${label}</div><div class='msg-content'>${window.marked.parse(content)}</div>`;
+  const fullLabel = isWelcome ? label : `${label} ${timeString}:`;
+
+  messageEl.innerHTML = `<div class='msg-label'>${fullLabel}</div><div class='msg-content'>${window.marked.parse(content)}</div>`;
   if (isWelcome && chatMessages.firstChild) {
     chatMessages.insertBefore(messageEl, chatMessages.firstChild);
   } else {
@@ -276,18 +285,18 @@ const I18N = {
     'ko': '안녕하세요! Cloudflare Workers AI 기반 챗봇입니다. 무엇을 도와드릴까요?'
   },
   'user-label': {
-    'en': 'User:',
-    'zh-TW': '使用者：',
-    'zh-CN': '用户：',
-    'ja': 'ユーザー：',
-    'ko': '사용자:'
+    'en': 'User',
+    'zh-TW': '使用者',
+    'zh-CN': '用户',
+    'ja': 'ユーザー',
+    'ko': '사용자'
   },
   'ai-label': {
-    'en': 'AI:',
-    'zh-TW': 'AI：',
-    'zh-CN': 'AI：',
-    'ja': 'AI：',
-    'ko': 'AI:'
+    'en': 'AI',
+    'zh-TW': 'AI',
+    'zh-CN': 'AI',
+    'ja': 'AI',
+    'ko': 'AI'
   },
   'error': {
     'en': 'Sorry, there was an error processing your request.',
