@@ -48,7 +48,8 @@ async function sendMessage() {
   sendButton.disabled = true;
 
   // Add user message to chat
-  addMessageToChat("user", message);
+  const userTimestamp = new Date();
+  addMessageToChat("user", message, false, userTimestamp);
 
   // Clear input
   userInput.value = "";
@@ -58,15 +59,13 @@ async function sendMessage() {
   typingIndicator.classList.add("visible");
 
   // Add message to history
-  chatHistory.push({ role: "user", content: message });
+  chatHistory.push({ role: "user", content: message, timestamp: userTimestamp });
 
   try {
     // Create new assistant response element
     const assistantMessageEl = document.createElement("div");
     assistantMessageEl.className = "message assistant-message";
-    const now = new Date();
-    const timeString = `(${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')})`;
-    const assistantLabel = `${I18N['ai-label'][getLang()]} ${timeString}:`;
+    const assistantLabel = `${I18N['ai-label'][getLang()]}:`;
     assistantMessageEl.innerHTML = `<div class='msg-label'>${assistantLabel}</div><div class='msg-content'></div>`;
     chatMessages.appendChild(assistantMessageEl);
 
@@ -99,6 +98,7 @@ async function sendMessage() {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let responseText = "";
+    let assistantTimestamp;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -114,14 +114,22 @@ async function sendMessage() {
       const lines = chunk.split("\n");
       for (const line of lines) {
         try {
-          const jsonData = JSON.parse(line);
-          if (jsonData.response) {
-            // Append new content to existing text
-            responseText += jsonData.response;
-            assistantMessageEl.querySelector(".msg-content").innerHTML = window.marked.parse(responseText);
+          if (line.startsWith("data:")) {
+            const jsonData = JSON.parse(line.substring(5));
+            if (jsonData.response) {
+              if (!assistantTimestamp) {
+                assistantTimestamp = new Date();
+                const timeString = `(${assistantTimestamp.getHours().toString().padStart(2, '0')}:${assistantTimestamp.getMinutes().toString().padStart(2, '0')}:${assistantTimestamp.getSeconds().toString().padStart(2, '0')})`;
+                const assistantLabel = `${I18N['ai-label'][getLang()]} ${timeString}:`;
+                assistantMessageEl.querySelector(".msg-label").textContent = assistantLabel;
+              }
+              // Append new content to existing text
+              responseText += jsonData.response;
+              assistantMessageEl.querySelector(".msg-content").innerHTML = window.marked.parse(responseText);
 
-            // Scroll to bottom
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+              // Scroll to bottom
+              chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
           }
         } catch (e) {
           console.error("Error parsing JSON:", e);
@@ -130,7 +138,9 @@ async function sendMessage() {
     }
 
     // Add completed response to chat history
-    chatHistory.push({ role: "assistant", content: responseText });
+    if (responseText) {
+      chatHistory.push({ role: "assistant", content: responseText, timestamp: assistantTimestamp });
+    }
   } catch (error) {
     console.error("Error:", error);
     showErrorToast(I18N['error'][getLang()]);
@@ -149,17 +159,16 @@ async function sendMessage() {
 /**
  * Helper function to add message to chat
  */
-function addMessageToChat(role, content, isWelcome) {
+function addMessageToChat(role, content, isWelcome, timestamp) {
   const messageEl = document.createElement("div");
   messageEl.className = `message ${role}-message`;
   if (isWelcome) messageEl.setAttribute('data-welcome', '1');
 
-  const now = new Date();
-  const timeString = `(${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')})`;
+  const timeString = timestamp ? `(${timestamp.getHours().toString().padStart(2, '0')}:${timestamp.getMinutes().toString().padStart(2, '0')}:${timestamp.getSeconds().toString().padStart(2, '0')})` : '';
 
   // 多語 label
   const label = role === "user" ? I18N['user-label'][getLang()] : I18N['ai-label'][getLang()];
-  const fullLabel = isWelcome ? label : `${label} ${timeString}:`;
+  const fullLabel = `${label} ${timeString}:`;
 
   messageEl.innerHTML = `<div class='msg-label'>${fullLabel}</div><div class='msg-content'>${window.marked.parse(content)}</div>`;
   if (isWelcome && chatMessages.firstChild) {
@@ -371,7 +380,11 @@ clearChatButton.addEventListener("click", () => {
 
 // "Save Chat" button
 saveChatButton.addEventListener("click", () => {
-  const chatText = chatHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n\n');
+  const chatText = chatHistory.map(msg => {
+    const time = new Date(msg.timestamp);
+    const timeString = `(${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}:${time.getSeconds().toString().padStart(2, '0')})`;
+    return `${I18N[msg.role + '-label'][getLang()]}: ${timeString}\n${msg.content}`;
+  }).join('\n\n');
   const blob = new Blob([chatText], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -385,12 +398,14 @@ saveChatButton.addEventListener("click", () => {
 function renderWelcome() {
   // 若已存在歡迎訊息則只更新內容，不重複插入
   let firstMsg = chatMessages.querySelector('.assistant-message[data-welcome]');
+  const welcomeTimestamp = new Date();
   if (!firstMsg) {
-    addMessageToChat('assistant', I18N['welcome'][getLang()], true);
+    addMessageToChat('assistant', I18N['welcome'][getLang()], true, welcomeTimestamp);
   } else {
     // 更新語言時只改內容
     firstMsg.querySelector('.msg-content').innerHTML = window.marked.parse(I18N['welcome'][getLang()]);
-    firstMsg.querySelector('.msg-label').textContent = I18N['ai-label'][getLang()];
+    const timeString = `(${welcomeTimestamp.getHours().toString().padStart(2, '0')}:${welcomeTimestamp.getMinutes().toString().padStart(2, '0')}:${welcomeTimestamp.getSeconds().toString().padStart(2, '0')})`;
+    firstMsg.querySelector('.msg-label').textContent = `${I18N['ai-label'][getLang()]} ${timeString}:`;
   }
 }
 // ===== 修改 addMessageToChat 支援多語 label =====
