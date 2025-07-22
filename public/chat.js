@@ -1,9 +1,7 @@
 /**
- * LLM Chat App Frontend (v6 - Final Fix Attempt)
+ * LLM Chat App Frontend
  *
- * Addresses:
- * - AI message box disappearing after thinking.
- * - Language button missing country codes.
+ * Handles the chat UI interactions and communication with the backend API.
  */
 
 // DOM elements
@@ -13,8 +11,8 @@ const sendButton = document.getElementById("send-button");
 const typingIndicator = document.getElementById("typing-indicator");
 const themeToggle = document.getElementById("theme-toggle");
 const langToggle = document.getElementById("lang-toggle");
-const clearChatButton = document.getElementById("clear-chat-button");
-const saveChatButton = document.getElementById("save-chat-button");
+const clearChatButton = document.getElementById("clear-chat-button"); // Added
+const saveChatButton = document.getElementById("save-chat-button"); // Added
 const body = document.getElementById("body");
 
 // Chat state
@@ -24,79 +22,157 @@ let isProcessing = false;
 // Helper to format timestamp
 const formatTimestamp = (ts) => `(${ts.getHours().toString().padStart(2, '0')}:${ts.getMinutes().toString().padStart(2, '0')}:${ts.getSeconds().toString().padStart(2, '0')})`;
 
-// Localization Data
-const LANGS = [
-    { code: 'en', label: 'English' },
-    { code: 'zh-TW', label: '繁體中文' },
-    { code: 'zh-CN', label: '简体中文' },
-    { code: 'ja', label: '日本語' },
-    { code: 'ko', label: '한국어' },
-];
-const LANG_ICONS = { 'en': 'EN', 'zh-TW': 'TW', 'zh-CN': 'CN', 'ja': 'JP', 'ko': 'KO' };
-const I18N = {
-    'header-title': { 'en': 'Cloudflare AI Chat', 'zh-TW': 'Cloudflare AI 聊天室', 'zh-CN': 'Cloudflare AI 聊天室', 'ja': 'Cloudflare AI チャット', 'ko': 'Cloudflare AI 채팅' },
-    'header-desc': { 'en': 'Powered by Cloudflare Workers AI', 'zh-TW': '由 Cloudflare Workers AI 驅動', 'zh-CN': '由 Cloudflare Workers AI 驱动', 'ja': 'Cloudflare Workers AI 搭載', 'ko': 'Cloudflare Workers AI 기반' },
-    'theme-toggle': { 'en': 'Theme', 'zh-TW': '主題', 'zh-CN': '主题', 'ja': 'テーマ', 'ko': '테마' },
-    'lang-toggle': { 'en': 'Language', 'zh-TW': '語言', 'zh-CN': '语言', 'ja': '言語', 'ko': '언어' },
-    'clear-chat-button': { 'en': 'Clear', 'zh-TW': '清除', 'zh-CN': '清除', 'ja': 'クリア', 'ko': '지우기' },
-    'save-chat-button': { 'en': 'Save', 'zh-TW': '儲存', 'zh-CN': '保存', 'ja': '保存', 'ko': '저장' },
-    'typing-text': { 'en': 'AI is thinking...', 'zh-TW': 'AI 思考中...', 'zh-CN': 'AI 思考中...', 'ja': 'AIが考え中...', 'ko': 'AI가 생각 중...' },
-    'user-input': { 'en': 'Type your message here...', 'zh-TW': '請輸入訊息...', 'zh-CN': '请输入信息...', 'ja': 'メッセージを入力してください...', 'ko': '메시지를 입력하세요...' },
-    'send-button': { 'en': 'Send', 'zh-TW': '送出', 'zh-CN': '发送', 'ja': '送信', 'ko': '전송' },
-    'footer-text': { 'en': 'Cloudflare Workers AI Chat Template © 2025', 'zh-TW': 'Cloudflare Workers AI 聊天範本 © 2025', 'zh-CN': 'Cloudflare Workers AI 聊天模板 © 2025', 'ja': 'Cloudflare Workers AI チャットテンプレート © 2025', 'ko': 'Cloudflare Workers AI 채팅 템플릿 © 2025' },
-    'welcome': { 'en': "Hello! I'm an LLM chat app powered by Cloudflare Workers AI. How can I help you today?", 'zh-TW': '哈囉！我是由 Cloudflare Workers AI 驅動的聊天機器人，有什麼可以幫您？', 'zh-CN': '你好！我是由 Cloudflare Workers AI 驱动的聊天机器人，有什么可以帮您？', 'ja': 'こんにちは！Cloudflare Workers AI 搭載のチャットボットです。ご用件をどうぞ！', 'ko': '안녕하세요! Cloudflare Workers AI 기반 챗봇입니다. 무엇을 도와드릴까요?' },
-    'user-label': { 'en': 'User', 'zh-TW': '使用者', 'zh-CN': '用户', 'ja': 'ユーザー', 'ko': '사용자' },
-    'ai-label': { 'en': 'AI', 'zh-TW': 'AI', 'zh-CN': 'AI', 'ja': 'AI', 'ko': 'AI' },
-    'error': { 'en': 'Sorry, there was an error processing your request.', 'zh-TW': '抱歉，處理您的請求時發生錯誤。', 'zh-CN': '抱歉，处理您的请求时发生错误。', 'ja': '申し訳ありません。リクエスト処理中にエラーが発生しました。', 'ko': '죄송합니다。 요청 처리 중 오류가 발생했습니다。
-};
-const SYSTEM_PROMPT = {
-    'en': 'You are a helpful, friendly assistant. Provide concise and accurate responses.', 'zh-TW': '你是一個樂於助人且友善的助理，請用簡潔且準確的方式回覆。', 'zh-CN': '你是一个乐于助人且友善的助手，请用简洁且准确的方式回复。', 'ja': 'あなたは親切でフレンドリーなアシスタントです。簡潔かつ正確に回答してください。', 'ko': '당신은 친절하고 도움이 되는 어시스턴트입니다。 간결하고 정확하게 답변해 주세요。
-};
+// Auto-resize textarea as user types
+userInput.addEventListener("input", function () {
+  this.style.height = "auto";
+  this.style.height = this.scrollHeight + "px";
+});
 
-// Language and Theme helpers
-const getLang = () => localStorage.getItem('lang') || 'en';
-const setLang = (lang) => localStorage.setItem('lang', lang);
-const getThemeIsDark = () => body.classList.contains("dark");
+// Send message on Enter (without Shift)
+userInput.addEventListener("keydown", function (e) {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
 
-function setTheme(isDark) {
-    body.classList.toggle("dark", isDark);
-    updateI18nUI(); // Update all UI text, including theme button
-}
+// Send button click handler
+sendButton.addEventListener("click", sendMessage);
 
-function updateI18nUI() {
+/**
+ * Sends a message to the chat API and processes the response
+ */
+async function sendMessage() {
+  const message = userInput.value.trim();
+
+  // Don't send empty messages
+  if (message === "" || isProcessing) return;
+
+  // Disable input while processing
+  isProcessing = true;
+  userInput.disabled = true;
+  sendButton.disabled = true;
+
+  // Add user message to chat
+  const userTimestamp = new Date(); // Get timestamp for user message
+  addMessageToChat("user", message, { timestamp: userTimestamp }); // Pass timestamp
+
+  // Clear input
+  userInput.value = "";
+  userInput.style.height = "auto";
+
+  // Show typing indicator
+typingIndicator.classList.add("visible");
+
+  // Add message to history
+  chatHistory.push({ role: "user", content: message, timestamp: userTimestamp }); // Store timestamp
+
+  try {
+    // Create new assistant response element (placeholder initially)
+    const assistantMessageEl = addMessageToChat("assistant", "...", { isPlaceholder: true }); // Use placeholder option
+
+    // Scroll to bottom
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    // 傳送 system prompt
     const lang = getLang();
-    const isDark = getThemeIsDark();
+    const messages = [
+      { role: 'system', content: SYSTEM_PROMPT[lang] || SYSTEM_PROMPT['en'] },
+      ...chatHistory.map(m => ({ role: m.role, content: m.content })) // Only send role and content to API
+    ];
+    // Send request to API
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages,
+      }),
+    });
 
-    // Update simple text elements
-    document.getElementById('header-title').textContent = I18N['header-title'][lang];
-    document.getElementById('header-desc').textContent = I18N['header-desc'][lang];
-    document.getElementById('typing-text').textContent = I18N['typing-text'][lang];
-    userInput.placeholder = I18N['user-input'][lang];
-    sendButton.textContent = I18N['send-button'][lang];
-    document.getElementById('footer-text').textContent = I18N['footer-text'][lang];
+    // Handle errors
+    if (!response.ok) {
+      throw new Error("Failed to get response");
+    }
 
-    // Update buttons with icons and text
-    themeToggle.textContent = (isDark ? "🌙 " : "☀️ ") + I18N['theme-toggle'][lang]; // FIXED: Corrected icon logic
-    langToggle.textContent = LANG_ICONS[lang] + ' ' + I18N['lang-toggle'][lang]; 
-    clearChatButton.textContent = I18N['clear-chat-button'][lang];
-    saveChatButton.textContent = I18N['save-chat-button'][lang];
-}
+    // Process streaming response
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let responseText = "";
+    let firstChunk = true;
+    let assistantTimestamp; // To store the timestamp when the first chunk arrives
 
-function showErrorToast(msg) {
-    const toast = document.getElementById('error-toast');
-    toast.textContent = msg;
-    toast.style.display = 'block';
-    toast.style.opacity = '1';
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => { toast.style.display = 'none'; }, 300);
-    }, 3000);
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        break;
+      }
+
+      // Decode chunk
+      const chunk = decoder.decode(value, { stream: true });
+
+      // Process SSE format
+      const lines = chunk.split("\n");
+      for (const line of lines) {
+        if (!line.startsWith("data:")) continue; // Skip non-data lines
+        try {
+          const jsonData = JSON.parse(line.substring(5));
+          if (jsonData.response) {
+            if (firstChunk) {
+              firstChunk = false;
+              assistantTimestamp = new Date(); // Get timestamp on first chunk
+              const labelText = I18N['ai-label'][getLang()];
+              assistantMessageEl.querySelector('.msg-label').textContent = `${labelText} ${formatTimestamp(assistantTimestamp)}:`; // Update label with timestamp
+              assistantMessageEl.querySelector(".msg-content").innerHTML = ''; // Clear placeholder
+            }
+            // Append new content to existing text
+            responseText += jsonData.response;
+            assistantMessageEl.querySelector(".msg-content").innerHTML = window.marked.parse(responseText);
+
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+          }
+        } catch (e) {
+          console.error("Error parsing JSON:", e);
+        }
+      }
+    }
+
+    // Add completed response to chat history
+    if (responseText) {
+      chatHistory.push({ role: "assistant", content: responseText, timestamp: assistantTimestamp }); // Store timestamp
+    } else {
+      // If AI sent no actual text, update the placeholder to indicate no response
+      assistantMessageEl.querySelector(".msg-content").innerHTML = I18N['error'][getLang()]; 
+      assistantMessageEl.classList.add('error-message');
+      chatHistory.push({ role: "assistant", content: I18N['error'][getLang()], timestamp: assistantTimestamp || new Date() });
+    }
+  } catch (error) {
+    console.error("Error:", error);
+    showErrorToast(I18N['error'][getLang()]);
+    if (assistantMessageEl) {
+      assistantMessageEl.querySelector(".msg-content").innerHTML = I18N['error'][getLang()];
+      assistantMessageEl.classList.add('error-message');
+      chatHistory.push({ role: "assistant", content: I18N['error'][getLang()], timestamp: new Date() });
+    }
+  } finally {
+    // Hide typing indicator
+    typingIndicator.classList.remove("visible");
+
+    // Re-enable input
+    isProcessing = false;
+    userInput.disabled = false;
+    sendButton.disabled = false;
+    userInput.focus();
+  }
 }
 
 /**
- * Adds a message to the chat UI.
+ * Helper function to add message to chat
  * @param {string} role - 'user' or 'assistant'
- * @param {string} content - The message content (can be empty for placeholders)
+ * @param {string} content - The message content
  * @param {object} options - Optional parameters
  * @param {boolean} [options.isWelcome=false] - If it's the initial welcome message
  * @param {boolean} [options.isPlaceholder=false] - If it's a placeholder for AI response
@@ -104,212 +180,298 @@ function showErrorToast(msg) {
  * @returns {HTMLElement} The created message element
  */
 function addMessageToChat(role, content, options = {}) {
-    const { isWelcome = false, isPlaceholder = false, timestamp = new Date() } = options;
-    
-    const messageEl = document.createElement("div");
-    messageEl.className = `message ${role}-message`;
+  const { isWelcome = false, isPlaceholder = false, timestamp = new Date() } = options;
+  const messageEl = document.createElement("div");
+  messageEl.className = `message ${role}-message`;
+  if (isWelcome) messageEl.setAttribute('data-welcome', '1');
 
-    const labelKey = role === 'assistant' ? 'ai-label' : 'user-label';
-    const labelText = I18N[labelKey][getLang()];
-    
-    let fullLabel;
-    if (isWelcome) {
-        fullLabel = `${labelText} ${formatTimestamp(timestamp)}:`; // FIXED: Added timestamp to welcome message
-        messageEl.setAttribute('data-welcome', '1');
-    } else if (isPlaceholder) {
-        fullLabel = labelText + ':'; // Placeholder has no timestamp initially
-    } else {
-        fullLabel = `${labelText} ${formatTimestamp(timestamp)}:`;
+  const label = role === "user" ? I18N['user-label'][getLang()] : I18N['ai-label'][getLang()];
+  let fullLabel;
+  if (isWelcome) {
+    fullLabel = `${label} ${formatTimestamp(timestamp)}:`; // Welcome message gets timestamp
+  } else if (isPlaceholder) {
+    fullLabel = label + ':'; // Placeholder has no timestamp initially
+  } else {
+    fullLabel = `${label} ${formatTimestamp(timestamp)}:`;
+  }
+
+  messageEl.innerHTML = `<div class='msg-label'>${fullLabel}</div><div class='msg-content'>${window.marked.parse(content)}</div>`;
+  chatMessages.appendChild(messageEl);
+
+  // Scroll to bottom
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return messageEl;
+}
+
+// 主題切換功能
+const themeToggle = document.getElementById("theme-toggle");
+const body = document.getElementById("body");
+
+function setTheme(isDark) {
+  if (isDark) {
+    body.classList.add("dark");
+    themeToggle.textContent = "🌙 " + I18N['theme-toggle'][getLang()]; // Changed to moon for dark
+  } else {
+    body.classList.remove("dark");
+    themeToggle.textContent = "☀️ " + I18N['theme-toggle'][getLang()]; // Changed to sun for light
+  }
+}
+function getThemeIsDark() {
+  return body.classList.contains("dark");
+}
+
+// 讀取 localStorage 或跟隨系統
+function getPreferredTheme() {
+  const saved = localStorage.getItem("theme");
+  if (saved === "dark") return true;
+  if (saved === "light") return false;
+  // 沒有儲存時跟隨系統
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+// ===== 多語言支援 =====
+const LANGS = [
+  { code: 'en', label: 'English' },
+  { code: 'zh-TW', label: '繁體中文' },
+  { code: 'zh-CN', label: '简体中文' },
+  { code: 'ja', label: '日本語' },
+  { code: 'ko', label: '한국어' },
+];
+const I18N = {
+  'header-title': {
+    'en': 'Cloudflare AI Chat',
+    'zh-TW': 'Cloudflare AI 聊天室',
+    'zh-CN': 'Cloudflare AI 聊天室',
+    'ja': 'Cloudflare AI チャット',
+    'ko': 'Cloudflare AI 채팅',
+  },
+  'header-desc': {
+    'en': 'Powered by Cloudflare Workers AI',
+    'zh-TW': '由 Cloudflare Workers AI 驅動',
+    'zh-CN': '由 Cloudflare Workers AI 驱动',
+    'ja': 'Cloudflare Workers AI 搭載',
+    'ko': 'Cloudflare Workers AI 기반',
+  },
+  'theme-toggle': {
+    'en': 'Theme',
+    'zh-TW': '主題',
+    'zh-CN': '主题',
+    'ja': 'テーマ',
+    'ko': '테마',
+  },
+  'lang-toggle': {
+    'en': '🌐 Language',
+    'zh-TW': '🌐 語言',
+    'zh-CN': '🌐 语言',
+    'ja': '🌐 言語',
+    'ko': '🌐 언어',
+  },
+  'clear-chat-button': { 'en': 'Clear', 'zh-TW': '清除', 'zh-CN': '清除', 'ja': 'クリア', 'ko': '지우기' }, // Added
+  'save-chat-button': { 'en': 'Save', 'zh-TW': '儲存', 'zh-CN': '保存', 'ja': '保存', 'ko': '저장' }, // Added
+  'typing-text': {
+    'en': 'AI is thinking...',
+    'zh-TW': 'AI 思考中...',
+    'zh-CN': 'AI 思考中...',
+    'ja': 'AIが考え中...', 
+    'ko': 'AI가 생각 중...'
+  },
+  'user-input': {
+    'en': 'Type your message here...', 
+    'zh-TW': '請輸入訊息...', 
+    'zh-CN': '请输入信息...', 
+    'ja': 'メッセージを入力してください...', 
+    'ko': '메시지를 입력하세요...'
+  },
+  'send-button': {
+    'en': 'Send',
+    'zh-TW': '送出',
+    'zh-CN': '发送',
+    'ja': '送信',
+    'ko': '전송'
+  },
+  'footer-text': {
+    'en': 'Cloudflare Workers AI Chat Template © 2025',
+    'zh-TW': 'Cloudflare Workers AI 聊天範本 © 2025',
+    'zh-CN': 'Cloudflare Workers AI 聊天模板 © 2025',
+    'ja': 'Cloudflare Workers AI チャットテンプレート © 2025',
+    'ko': 'Cloudflare Workers AI 채팅 템플릿 © 2025'
+  },
+  'welcome': {
+    'en': "Hello! I'm an LLM chat app powered by Cloudflare Workers AI. How can I help you today?",
+    'zh-TW': '哈囉！我是由 Cloudflare Workers AI 驅動的聊天機器人，有什麼可以幫您？',
+    'zh-CN': '你好！我是由 Cloudflare Workers AI 驱动的聊天机器人，有什么可以帮您？',
+    'ja': 'こんにちは！Cloudflare Workers AI 搭載のチャットボットです。ご用件をどうぞ！',
+    'ko': '안녕하세요！Cloudflare Workers AI 기반 챗봇입니다. 무엇을 도와드릴까요?'
+  },
+  'user-label': {
+    'en': 'User',
+    'zh-TW': '使用者',
+    'zh-CN': '用户',
+    'ja': 'ユーザー',
+    'ko': '사용자'
+  },
+  'ai-label': {
+    'en': 'AI',
+    'zh-TW': 'AI',
+    'zh-CN': 'AI',
+    'ja': 'AI',
+    'ko': 'AI'
+  },
+  'error': {
+    'en': 'Sorry, there was an error processing your request.',
+    'zh-TW': '抱歉，處理您的請求時發生錯誤。',
+    'zh-CN': '抱歉，处理您的请求时发生错误。',
+    'ja': '申し訳ありません。リクエスト処理中にエラーが発生しました。',
+    'ko': '죄송합니다. 요청 처리 중 오류가 발생했습니다.'
+  }
+};
+
+function getLang() {
+  return localStorage.getItem('lang') || 'en';
+}
+function setLang(lang) {
+  localStorage.setItem('lang', lang);
+}
+// ===== 語言 icon 對應表 =====
+const LANG_ICONS = {
+  'en': 'EN',
+  'zh-TW': 'TW',
+  'zh-CN': 'CN',
+  'ja': 'JP',
+  'ko': 'KO',
+};
+function updateI18nUI() {
+  const lang = getLang();
+  const isDark = getThemeIsDark(); // Get current theme state
+
+  for (const id in I18N) {
+    if (id === 'welcome' || id === 'user-label' || id === 'ai-label' || id === 'error') continue;
+    const el = document.getElementById(id);
+    if (el) {
+      if (id === 'user-input') {
+        el.placeholder = I18N[id][lang];
+      } else if (id === 'lang-toggle') {
+        el.textContent = LANG_ICONS[lang] + ' ' + I18N[id][lang];
+      } else if (id === 'theme-toggle') { // Handle theme toggle separately for icon
+        el.textContent = (isDark ? "🌙 " : "☀️ ") + I18N[id][lang]; // Corrected icon logic
+      } else {
+        el.textContent = I18N[id][lang];
+      }
     }
-
-    messageEl.innerHTML = `<div class="msg-label">${fullLabel}</div><div class="msg-content">${window.marked.parse(content)}</div>`;
-    chatMessages.appendChild(messageEl);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-    return messageEl;
+  }
 }
 
-function renderWelcomeMessage() {
-    chatMessages.innerHTML = '';
-    addMessageToChat('assistant', I18N['welcome'][getLang()], { isWelcome: true });
+// 語言切換按鈕
+const langToggle = document.getElementById('lang-toggle');
+langToggle.addEventListener('click', () => {
+  const cur = getLang();
+  const idx = LANGS.findIndex(l => l.code === cur);
+  const next = LANGS[(idx + 1) % LANGS.length].code;
+  setLang(next);
+  updateI18nUI();
+  // 重新渲染歡迎訊息（如果對話為空）
+  if (chatMessages.children.length === 0) renderWelcome();
+});
+
+// 恢復主題切換按鈕事件
+themeToggle.addEventListener("click", () => {
+  const isDark = !body.classList.contains("dark");
+  setTheme(isDark);
+  localStorage.setItem("theme", isDark ? "dark" : "light");
+});
+
+// Clear Chat Button
+clearChatButton.addEventListener("click", () => {
+  chatHistory = [];
+  chatMessages.innerHTML = ''; // Clear messages from UI
+  renderWelcome();
+});
+
+// Save Chat Button
+saveChatButton.addEventListener("click", () => {
+  if (chatHistory.length === 0) return;
+  const lang = getLang();
+  const chatText = chatHistory.map(msg => {
+    const labelKey = msg.role === 'assistant' ? 'ai-label' : 'user-label';
+    const label = I18N[labelKey][lang];
+    const time = msg.timestamp ? formatTimestamp(new Date(msg.timestamp)) : '';
+    return `${label} ${time}:\n${msg.content}`;
+  }).join('\n\n');
+
+  const blob = new Blob([chatText], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'chat-history.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+// ===== 歡迎訊息動態插入 =====
+function renderWelcome() {
+  // 若已存在歡迎訊息則只更新內容，不重複插入
+  let firstMsg = chatMessages.querySelector('.assistant-message[data-welcome]');
+  if (!firstMsg) {
+    addMessageToChat('assistant', I18N['welcome'][getLang()], { isWelcome: true, timestamp: new Date() }); // Added timestamp
+  } else {
+    // 更新語言時只改內容
+    firstMsg.querySelector('.msg-content').innerHTML = window.marked.parse(I18N['welcome'][getLang()]);
+    // Update label with current timestamp
+    const labelText = I18N['ai-label'][getLang()];
+    firstMsg.querySelector('.msg-label').textContent = `${labelText} ${formatTimestamp(new Date())}:`;
+  }
 }
 
-async function sendMessage() {
-    const message = userInput.value.trim();
-    if (message === "" || isProcessing) return;
+// ===== 初始化語言與 UI =====
+updateI18nUI();
+if (chatMessages.children.length === 0) renderWelcome();
+// ... existing code ...
+// ===== send button 多語 =====
+document.getElementById('send-button').textContent = I18N['send-button'][getLang()];
+// ... existing code ...
+// ===== textarea 多語 =====
+document.getElementById('user-input').placeholder = I18N['user-input'][getLang()];
 
-    isProcessing = true;
-    userInput.disabled = true;
-    sendButton.disabled = true;
-    typingIndicator.classList.add("visible");
+// 初始化時只呼叫 renderWelcome 一次
+if (!chatMessages.querySelector('.assistant-message[data-welcome]')) renderWelcome();
 
-    const userTimestamp = new Date();
-    addMessageToChat("user", message, { timestamp: userTimestamp });
-    chatHistory.push({ role: "user", content: message, timestamp: userTimestamp });
-
-    userInput.value = "";
-    userInput.style.height = "auto";
-
-    // Create a placeholder for the AI response, which will be updated
-    const assistantMessageEl = addMessageToChat("assistant", "...", { isPlaceholder: true });
-
-    try {
-        const response = await fetch("/api/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                messages: [
-                    { role: 'system', content: SYSTEM_PROMPT[getLang()] },
-                    ...chatHistory.map(m => ({role: m.role, content: m.content}))
-                ]
-            }),
-        });
-
-        if (!response.ok) throw new Error(`API error: ${response.statusText}`);
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let responseText = "";
-        let firstChunk = true;
-        let assistantTimestamp;
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split("\n");
-
-            for (const line of lines) {
-                if (line.startsWith("data:")) {
-                    try {
-                        const data = JSON.parse(line.substring(5));
-                        if (data.response) {
-                            if (firstChunk) {
-                                firstChunk = false;
-                                assistantTimestamp = new Date();
-                                const labelText = I18N['ai-label'][getLang()];
-                                assistantMessageEl.querySelector('.msg-label').textContent = `${labelText} ${formatTimestamp(assistantTimestamp)}:`;
-                                assistantMessageEl.querySelector('.msg-content').innerHTML = ''; // Clear placeholder content
-                            }
-                            responseText += data.response;
-                            assistantMessageEl.querySelector(".msg-content").innerHTML = window.marked.parse(responseText);
-                            chatMessages.scrollTop = chatMessages.scrollHeight;
-                        }
-                    } catch (e) { /* Ignore non-JSON lines */ }
-                }
-            }
-        }
-        
-        // FIXED: If AI sent no actual text, update the placeholder to indicate no response
-        if (!responseText) {
-           assistantMessageEl.querySelector(".msg-content").innerHTML = I18N['error'][getLang()]; 
-           assistantMessageEl.classList.add('error-message');
-           chatHistory.push({ role: "assistant", content: I18N['error'][getLang()], timestamp: assistantTimestamp || new Date() });
-        } else {
-            chatHistory.push({ role: "assistant", content: responseText, timestamp: assistantTimestamp });
-        }
-
-    } catch (error) {
-        console.error("Chat Error:", error);
-        showErrorToast(I18N['error'][getLang()]);
-        // FIXED: Update content on error instead of removing
-        if (assistantMessageEl) {
-            assistantMessageEl.querySelector(".msg-content").innerHTML = I18N['error'][getLang()];
-            assistantMessageEl.classList.add('error-message');
-            chatHistory.push({ role: "assistant", content: I18N['error'][getLang()], timestamp: new Date() });
-        }
-    } finally {
-        isProcessing = false;
-        userInput.disabled = false;
-        sendButton.disabled = false;
-        typingIndicator.classList.remove("visible");
-        userInput.focus();
-    }
+// ===== 錯誤提示條 =====
+function showErrorToast(msg) {
+  const toast = document.getElementById('error-toast');
+  toast.textContent = msg;
+  toast.style.display = 'block';
+  toast.style.opacity = '1';
+  clearTimeout(showErrorToast._timer);
+  showErrorToast._timer = setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => { toast.style.display = 'none'; }, 300);
+  }, 3000);
 }
 
-// Event Listeners Setup
-function setupEventListeners() {
-    sendButton.addEventListener("click", sendMessage);
-    userInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
-    userInput.addEventListener("input", function () {
-        this.style.height = "auto";
-        this.style.height = this.scrollHeight + "px";
-    });
+// ===== theme 預設為 dark =====
+setTheme(true);
 
-    themeToggle.addEventListener("click", () => {
-        const isDark = !getThemeIsDark();
-        localStorage.setItem("theme", isDark ? "dark" : "light");
-        setTheme(isDark);
-    });
+// ===== 多語 system prompt =====
+const SYSTEM_PROMPT = {
+  'en': 'You are a helpful, friendly assistant. Provide concise and accurate responses.',
+  'zh-TW': '你是一個樂於助人且友善的助理，請用簡潔且準確的方式回覆。',
+  'zh-CN': '你是一个乐于助人且友善的助手，请用简洁且准确的方式回复。',
+  'ja': 'あなたは親切でフレンドリーなアシスタントです。簡潔かつ正確に回答してください。',
+  'ko': '당신은 친절하고 도움이 되는 어시스턴트입니다. 간결하고 정확하게 답변해 주세요。',
+};
 
-    langToggle.addEventListener('click', () => {
-        const currentLang = getLang();
-        const currentIndex = LANGS.findIndex(l => l.code === currentLang);
-        const nextLang = LANGS[(currentIndex + 1) % LANGS.length].code;
-        setLang(nextLang);
-        updateI18nUI();
-        // Re-render welcome message if it's the only one
-        if (chatHistory.length === 0 && document.querySelector('[data-welcome]')) {
-            renderWelcomeMessage();
-        }
-    });
-
-    clearChatButton.addEventListener("click", () => {
-        chatHistory = [];
-        renderWelcomeMessage();
-    });
-
-    saveChatButton.addEventListener("click", () => {
-        if (chatHistory.length === 0) return;
-        const lang = getLang();
-        const chatText = chatHistory.map(msg => {
-            const labelKey = msg.role === 'assistant' ? 'ai-label' : 'user-label';
-            const label = I18N[labelKey][lang];
-            const time = msg.timestamp ? formatTimestamp(new Date(msg.timestamp)) : '';
-            return `${label} ${time}:\n${msg.content}`;
-        }).join('\n\n');
-
-        const blob = new Blob([chatText], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'chat-history.txt';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    });
+// ===== 自動偵測瀏覽器語言 =====
+function detectBrowserLang() {
+  const navLang = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
+  if (navLang.startsWith('zh-TW') || navLang === 'zh-Hant') return 'zh-TW';
+  if (navLang.startsWith('zh-CN') || navLang === 'zh-Hans') return 'zh-CN';
+  if (navLang.startsWith('ja')) return 'ja';
+  if (navLang.startsWith('ko')) return 'ko';
+  if (navLang.startsWith('en')) return 'en';
+  return 'en';
 }
-
-// Initialization
-function init() {
-    function detectBrowserLang() {
-        const navLang = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
-        if (navLang.startsWith('zh-TW') || navLang === 'zh-Hant') return 'zh-TW';
-        if (navLang.startsWith('zh-CN') || navLang === 'zh-Hans') return 'zh-CN';
-        if (navLang.startsWith('ja')) return 'ja';
-        if (navLang.startsWith('ko')) return 'ko';
-        return 'en';
-    }
-
-    const savedLang = getLang();
-    if (!LANGS.some(l => l.code === savedLang)) {
-        setLang(detectBrowserLang());
-    }
-
-    const savedTheme = localStorage.getItem("theme");
-    setTheme(savedTheme === 'light' ? false : true); // Default to dark theme
-
-    setupEventListeners();
-    updateI18nUI();
-    renderWelcomeMessage();
-    userInput.focus();
+if (!localStorage.getItem('lang')) {
+  setLang(detectBrowserLang());
 }
-
-// Run the app
-init();
