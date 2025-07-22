@@ -111,30 +111,7 @@ async function sendMessage() {
       const chunk = decoder.decode(value, { stream: true });
 
       // Process SSE format
-      const lines = chunk.split("\n");
-      for (const line of lines) {
-        try {
-          if (line.startsWith("data:")) {
-            const jsonData = JSON.parse(line.substring(5));
-            if (jsonData.response) {
-              if (!assistantTimestamp) {
-                assistantTimestamp = new Date();
-                const timeString = `(${assistantTimestamp.getHours().toString().padStart(2, '0')}:${assistantTimestamp.getMinutes().toString().padStart(2, '0')}:${assistantTimestamp.getSeconds().toString().padStart(2, '0')})`;
-                const assistantLabel = `${I18N['ai-label'][getLang()]} ${timeString}:`;
-                assistantMessageEl.querySelector(".msg-label").textContent = assistantLabel;
-              }
-              // Append new content to existing text
-              responseText += jsonData.response;
-              assistantMessageEl.querySelector(".msg-content").innerHTML = window.marked.parse(responseText);
-
-              // Scroll to bottom
-              chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
-          }
-        } catch (e) {
-          console.error("Error parsing JSON:", e);
-        }
-      }
+      const lines = chunk.split("\n");      for (const line of lines) {        if (!line.startsWith("data:")) continue;        try {          const jsonData = JSON.parse(line.substring(5));          if (jsonData.response) {            if (!assistantTimestamp) {              assistantTimestamp = new Date();              const timeString = `(${assistantTimestamp.getHours().toString().padStart(2, '0')}:${assistantTimestamp.getMinutes().toString().padStart(2, '0')}:${assistantTimestamp.getSeconds().toString().padStart(2, '0')})`;              const assistantLabel = `${I18N['ai-label'][getLang()]} ${timeString}:`;              assistantMessageEl.querySelector(".msg-label").textContent = assistantLabel;            }            // Append new content to existing text            responseText += jsonData.response;            assistantMessageEl.querySelector(".msg-content").innerHTML = window.marked.parse(responseText);            // Scroll to bottom            chatMessages.scrollTop = chatMessages.scrollHeight;          }        } catch (e) {          // Ignore parsing errors, as some lines might be empty        }      }
     }
 
     // Add completed response to chat history
@@ -168,7 +145,7 @@ function addMessageToChat(role, content, isWelcome, timestamp) {
 
   // 多語 label
   const label = role === "user" ? I18N['user-label'][getLang()] : I18N['ai-label'][getLang()];
-  const fullLabel = `${label} ${timeString}:`;
+  const fullLabel = isWelcome ? label : `${label} ${timeString}:`;
 
   messageEl.innerHTML = `<div class='msg-label'>${fullLabel}</div><div class='msg-content'>${window.marked.parse(content)}</div>`;
   if (isWelcome && chatMessages.firstChild) {
