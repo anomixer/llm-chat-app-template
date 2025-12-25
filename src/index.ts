@@ -11,7 +11,7 @@ import { Env, ChatMessage } from "./types";
 
 // Model ID for Workers AI model
 // https://developers.cloudflare.com/workers-ai/models/
-const MODEL_ID = "@cf/openchat/openchat-3.5-0106";
+const MODEL_ID = "@hf/google/gemma-7b-it";
 
 // Default system prompt
 const SYSTEM_PROMPT =
