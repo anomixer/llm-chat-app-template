@@ -2,9 +2,9 @@
  * LLM Chat App Frontend - Enhanced Streaming Version
  * 
  * 功能：
- * - SSE 事件流處理
+ * - JSON Lines 事件流處理（原始方式）
  * - 流式生成中斷
- * - Token 計數和生成速度顯示
+ * - Token 計数和生成速度顯示
  * - 智能緩衝減少 DOM 更新
  * - 改進的錯誤處理
  */
@@ -77,7 +77,7 @@ async function sendMessage() {
       <div class='msg-meta'>
         <span class='token-info'>
           <span class='token-count'>0</span> tokens | 
-          <span class='generation-speed'>0</span> tokens/s
+          <span class='generation-speed'>0.0</span> tokens/s
         </span>
       </div>
     `;
@@ -134,47 +134,40 @@ async function sendMessage() {
       // 解碼流數據
       buffer += decoder.decode(value, { stream: true });
 
-      // 按行分割（SSE 格式）
+      // 按行分割（JSON Lines 格式）
       const lines = buffer.split("\n");
       buffer = lines.pop() || ""; // 保留未完成的行
 
       for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
+        if (!line.trim()) continue;
 
         try {
-          // 解析 SSE 事件
-          const jsonStr = line.slice(6); // 移除 "data: " 前綴
-          const data = JSON.parse(jsonStr);
+          // 直接認訇上 JSON
+          const data = JSON.parse(line);
 
-          if (data.type === "chunk") {
-            // 接收文本塊
-            fullText += data.content;
-            currentTokenCount = data.tokenCount || currentTokenCount;
+          if (data.response) {
+            // 接收文本內容
+            fullText += data.response;
+            currentTokenCount++;
 
             // 智能緩衝：每 50ms 更新一次 UI
             const now = Date.now();
             if (now - lastUpdateTime >= updateInterval) {
+              const elapsedSeconds = (now - generationStartTime) / 1000;
+              const speed = currentTokenCount / (elapsedSeconds || 1);
               updateMessageDisplay(
                 assistantMessageEl,
                 fullText,
                 currentTokenCount,
-                data.tokensPerSecond,
+                speed,
               );
               chatMessages.scrollTop = chatMessages.scrollHeight;
               lastUpdateTime = now;
             }
-          } else if (data.type === "done") {
-            // 接收完成訊號
-            currentTokenCount = data.tokenCount || currentTokenCount;
-            console.log(
-              `生成完成: ${currentTokenCount} tokens, ${(data.duration / 1000).toFixed(2)}s`,
-            );
-          } else if (data.type === "error") {
-            // 接收錯誤
-            throw new Error(data.message || "Stream error");
           }
         } catch (e) {
-          console.error("SSE 解析錯誤:", e);
+          // 非 JSON 行則略過，可能是空行或其他格式
+          console.debug("Non-JSON line received:", line);
         }
       }
     }
