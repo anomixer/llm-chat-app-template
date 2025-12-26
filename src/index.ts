@@ -1,21 +1,28 @@
 /**
- * LLM Chat Application Template - Enhanced Streaming Version
+ * LLM Chat Application Template - Fixed Streaming Version
  * 
- * 增強型版本特性：
- * - SSE (Server-Sent Events) 支援
- * - Token 計數和速度指標
- * - 更好的流處理
+ * 改進型版本特性：
+ * - 修復 Cloudflare Workers AI streaming 問題
+ * - 直接回傳原始流而非 SSE 包裝
+ * - Token 計數通過前端解析
  * - 改進的錯誤處理
  *
  * @license MIT
  */
 import { Env, ChatMessage } from "./types";
 
+// Model ID for Workers AI model
+// https://developers.cloudflare.com/workers-ai/models/
 const MODEL_ID = "@hf/google/gemma-7b-it";
+
+// Default system prompt
 const SYSTEM_PROMPT =
   "You are a helpful, friendly assistant. Provide concise and accurate responses.";
 
 export default {
+  /**
+   * Main request handler for the Worker
+   */
   async fetch(
     request: Request,
     env: Env,
@@ -30,25 +37,29 @@ export default {
 
     // API Routes
     if (url.pathname === "/api/chat") {
+      // Handle POST requests for chat
       if (request.method === "POST") {
-        return handleChatRequest(request, env, ctx);
+        return handleChatRequest(request, env);
       }
+
+      // Method not allowed for other request types
       return new Response("Method not allowed", { status: 405 });
     }
 
+    // Handle 404 for unmatched routes
     return new Response("Not found", { status: 404 });
   },
 } satisfies ExportedHandler<Env>;
 
 /**
- * Handles chat API requests with streaming response
+ * Handles chat API requests
  */
 async function handleChatRequest(
   request: Request,
   env: Env,
-  ctx: ExecutionContext,
 ): Promise<Response> {
   try {
+    // Parse JSON request body
     const { messages = [] } = (await request.json()) as {
       messages: ChatMessage[];
     };
@@ -58,8 +69,7 @@ async function handleChatRequest(
       messages.unshift({ role: "system", content: SYSTEM_PROMPT });
     }
 
-    // Get streaming response from AI
-    const aiResponse = await env.AI.run(
+    const response = await env.AI.run(
       MODEL_ID,
       {
         messages,
@@ -67,133 +77,27 @@ async function handleChatRequest(
       },
       {
         returnRawResponse: true,
+        // Uncomment to use AI Gateway
+        // gateway: {
+        //   id: "YOUR_GATEWAY_ID", // Replace with your AI Gateway ID
+        //   skipCache: false,      // Set to true to bypass cache
+        //   cacheTtl: 3600,        // Cache time-to-live in seconds
+        // },
       },
     );
 
-    // Wrap the stream with SSE format
-    const sseStream = wrapStreamWithSSE(aiResponse.body);
-
-    return new Response(sseStream, {
-      status: 200,
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-        "Access-Control-Allow-Origin": "*",
-      },
-    });
+    // Return streaming response directly
+    // Note: This returns the raw streaming response from Workers AI
+    // which is in JSON Lines format (one JSON object per line)
+    return response as Response;
   } catch (error) {
     console.error("Error processing chat request:", error);
-    
-    // Return error as SSE event
-    const errorStream = new ReadableStream({
-      start(controller) {
-        const errorMsg = JSON.stringify({
-          type: "error",
-          message: "Failed to process request",
-          error: error instanceof Error ? error.message : String(error),
-        });
-        controller.enqueue(new TextEncoder().encode(`data: ${errorMsg}\n\n`));
-        controller.close();
+    return new Response(
+      JSON.stringify({ error: "Failed to process request" }),
+      {
+        status: 500,
+        headers: { "content-type": "application/json" },
       },
-    });
-
-    return new Response(errorStream, {
-      status: 500,
-      headers: {
-        "Content-Type": "text/event-stream",
-      },
-    });
+    );
   }
-}
-
-/**
- * Wraps the AI response stream with SSE format
- * Sends chunks with metadata like token count and timestamps
- */
-function wrapStreamWithSSE(
-  stream: ReadableStream<Uint8Array>,
-): ReadableStream<Uint8Array> {
-  return new ReadableStream({
-    async start(controller) {
-      const reader = stream.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let tokenCount = 0;
-      const startTime = Date.now();
-
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-
-          if (done) {
-            // Send completion event
-            const completionMsg = JSON.stringify({
-              type: "done",
-              tokenCount,
-              duration: Date.now() - startTime,
-              tokensPerSecond:
-                tokenCount / ((Date.now() - startTime) / 1000) || 0,
-              timestamp: Date.now(),
-            });
-            controller.enqueue(
-              new TextEncoder().encode(`data: ${completionMsg}\n\n`),
-            );
-            controller.close();
-            break;
-          }
-
-          buffer += decoder.decode(value, { stream: true });
-
-          // Process line by line
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || ""; // Keep incomplete line in buffer
-
-          for (const line of lines) {
-            if (!line.trim()) continue;
-
-            try {
-              const data = JSON.parse(line);
-              if (data.response) {
-                tokenCount++;
-
-                // Send chunk event in SSE format
-                const chunkMsg = JSON.stringify({
-                  type: "chunk",
-                  content: data.response,
-                  tokenCount,
-                  elapsedTime: Date.now() - startTime,
-                  tokensPerSecond:
-                    tokenCount / ((Date.now() - startTime) / 1000) || 0,
-                  timestamp: Date.now(),
-                });
-
-                controller.enqueue(
-                  new TextEncoder().encode(`data: ${chunkMsg}\n\n`),
-                );
-              }
-            } catch (parseError) {
-              console.error("Failed to parse AI response chunk:", parseError);
-              // Continue processing other lines
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Stream processing error:", error);
-
-        // Send error event
-        const errorMsg = JSON.stringify({
-          type: "error",
-          message:
-            error instanceof Error ? error.message : "Unknown stream error",
-        });
-        controller.enqueue(
-          new TextEncoder().encode(`data: ${errorMsg}\n\n`),
-        );
-        controller.close();
-      } finally {
-        reader.releaseLock();
-      }
-    },
-  });
 }
