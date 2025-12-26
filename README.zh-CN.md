@@ -35,9 +35,9 @@
 - 🌙 **深色模式**：亮色/深色主题切换
 - 📝 **Markdown 支持**：完整的 markdown 渲染
 - 🏷️ **消息标签**：清晰的用户/AI 消息识别
-- 🚨 **Toast 通知**：非侵入式错误消息
+- 🚨 **Toast 提示**：非侵入式错误消息
 - ⏹️ **流式取消**：停止按钮可中止 AI 生成
-- 📊 **实时指标**：即时 token 计数与生成速度（tokens/s）
+- 📊 **实时指标**：实时 token 计数与生成速度（tokens/s）
 - ⚡ **智能缓冲**：优化的 UI 更新（50ms 批处理）实现 60+ FPS 流畅性能
 - 📄 **多语言文档**：5 种语言的 README 文件
 
@@ -109,10 +109,10 @@ npm run deploy
 
 #### 后端
 
-后端使用 Cloudflare Workers 构建，通过 Workers AI 平台生成响应。主要组件：
+后端使用 Cloudflare Workers 构建，并通过 Workers AI 平台生成响应。主要组件：
 
 1. **API 端点**（`/api/chat`）：接受 POST 请求并流式响应
-2. **流式传输**：使用 SSE 实时流式 AI 响应，带 `stream: true` 参数
+2. **流式传输**：使用 SSE 实时流式 AI 响应，使用 `stream: true` 参数
 3. **Workers AI 绑定**：连接 Cloudflare AI 服务
 
 #### 前端
@@ -120,7 +120,7 @@ npm run deploy
 前端是简单的 HTML/CSS/JavaScript 应用：
 
 1. 呈现多语言支持的聊天界面
-2. 向 API 发送用户消息
+2. 发送用户消息到 API
 3. 实时处理 SSE 流式响应
 4. 实现智能缓冲（50ms）以减少 DOM 更新
 5. 显示实时 token 指标和生成速度
@@ -130,7 +130,7 @@ npm run deploy
 ### 性能
 
 | 指标 | 数值 |
-|--------|-------|
+|------|------|
 | **UI 更新频率** | 每 50ms 批处理（vs. 每 token） |
 | **DOM 操作** | 减少 99%+ |
 | **帧率** | 稳定 60+ FPS |
@@ -139,9 +139,9 @@ npm run deploy
 
 ### 自定义
 
-#### 更改模型
+#### 更换模型
 
-要使用不同的 AI 模型，请更新 `src/index.ts` 中的 `MODEL_ID` 常量。可用模型请参考 [Cloudflare Workers AI 文档](https://developers.cloudflare.com/workers-ai/models/)。
+如需更换 AI 模型，请修改 `src/index.ts` 的 `MODEL_ID` 常量。可用模型请参考 [Cloudflare Workers AI 文档](https://developers.cloudflare.com/workers-ai/models/)。
 
 ```typescript
 const MODEL_ID = "@hf/google/gemma-7b-it"; // 修改这里
@@ -149,14 +149,14 @@ const MODEL_ID = "@hf/google/gemma-7b-it"; // 修改这里
 
 #### 使用 AI Gateway
 
-模板包含 AI Gateway 集成的注释代码，可提供流量控制、缓存、分析等功能。
+本模板包含 AI Gateway 集成注释代码，可提供流量控制、缓存、分析等功能。
 
-启用方法：
+启用方式：
 
-1. 在 Cloudflare 控制台创建 AI Gateway
-2. 取消注释 `src/index.ts` 中的 gateway 配置
+1. 在 Cloudflare 后台创建 AI Gateway
+2. 取消注释 `src/index.ts` 内的 gateway 配置
 3. 将 `YOUR_GATEWAY_ID` 替换为实际 Gateway ID
-4. 根据需要配置其他选项
+4. 根据需要调整其他选项
 
 详见 [AI Gateway 文档](https://developers.cloudflare.com/ai-gateway/)。
 
@@ -180,18 +180,18 @@ const SYSTEM_PROMPT = {
 const updateInterval = 50; // 毫秒（默认：50ms）
 ```
 
-较低值 = 更频繁更新（较高 CPU 使用率）  
-较高值 = 较少更新（更流畅但不太实时）
+较低数值 = 更频繁更新（较高 CPU 使用率）  
+较高数值 = 较少更新（更流畅但较不实时）
 
 #### 样式调整
 
-UI 样式包含在 `public/index.html` 的 `<style>` 部分。可以修改顶部的 CSS 变量来快速更改配色方案。
+UI 样式位于 `public/index.html` 的 `<style>` 区块。可直接调整 CSS 变量。
 
 ### 高级功能
 
 #### 流式取消
 
-用户可在 AI 生成期间点击停止按钮（⏹️）来取消流。这是通过 `AbortController` 实现的：
+用户可在 AI 生成期间点击停止按钮（⏹️）来取消流式传输。这是通过 `AbortController` 实现的：
 
 ```javascript
 const abortController = new AbortController();
@@ -201,13 +201,13 @@ fetch('/api/chat', { signal: abortController.signal });
 
 #### 实时指标
 
-应用显示：
+应用程序显示：
 - **Token 计数**：已生成的 token 数量
 - **生成速度**：实时每秒 token 数
 
-这些指标在客户端从流数据中计算。
+这些指标在客户端从流式数据中计算。
 
-### 参考资源
+### 相关资源
 
 - [Cloudflare Workers 文档](https://developers.cloudflare.com/workers/)
 - [Cloudflare Workers AI 文档](https://developers.cloudflare.com/workers-ai/)
