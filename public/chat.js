@@ -1,10 +1,10 @@
 /**
- * LLM Chat App Frontend - Enhanced Streaming Version
+ * LLM Chat App Frontend - Fixed SSE Parsing Version
  * 
  * 功能：
- * - JSON Lines 事件流處理（原始方式）
+ * - 正確解析 SSE 格式（data: 前綴）
  * - 流式生成中斷
- * - Token 計数和生成速度顯示
+ * - Token 計數和生成速度顯示
  * - 智能緩衝減少 DOM 更新
  * - 改進的錯誤處理
  */
@@ -113,7 +113,7 @@ async function sendMessage() {
       throw new Error(`API 錯誤: ${response.status}`);
     }
 
-    // 處理流式回應
+    // 處理流式回應（SSE 格式）
     let fullText = "";
     let lastUpdateTime = Date.now();
     const updateInterval = 50; // 每 50ms 更新一次 UI
@@ -134,16 +134,26 @@ async function sendMessage() {
       // 解碼流數據
       buffer += decoder.decode(value, { stream: true });
 
-      // 按行分割（JSON Lines 格式）
+      // 按行分割（SSE 格式）
       const lines = buffer.split("\n");
       buffer = lines.pop() || ""; // 保留未完成的行
 
       for (const line of lines) {
-        if (!line.trim()) continue;
+        // SSE 格式：以 "data: " 開頭
+        if (!line.startsWith("data: ")) continue;
+
+        // 移除 "data: " 前綴
+        const jsonStr = line.slice(6);
+        
+        // 檢查是否是結束標記
+        if (jsonStr === "[DONE]") {
+          console.log("Stream completed with [DONE] marker");
+          continue;
+        }
 
         try {
-          // 直接認訇上 JSON
-          const data = JSON.parse(line);
+          // 解析 JSON
+          const data = JSON.parse(jsonStr);
 
           if (data.response) {
             // 接收文本內容
@@ -165,9 +175,14 @@ async function sendMessage() {
               lastUpdateTime = now;
             }
           }
+          
+          // 檢查是否有 usage 信息（最後一條消息）
+          if (data.usage) {
+            console.log("Token usage:", data.usage);
+          }
         } catch (e) {
-          // 非 JSON 行則略過，可能是空行或其他格式
-          console.debug("Non-JSON line received:", line);
+          // 解析失敗，可能是空行或其他格式
+          console.debug("Failed to parse SSE line:", jsonStr, e);
         }
       }
     }
